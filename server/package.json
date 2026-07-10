@@ -5,6 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "node src/index.js",
+    "start": "node src/index.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "seed": "node prisma/seed.js"
