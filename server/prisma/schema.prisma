@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   // "admin" | "student"
+  status       String   @default("Active") // Active | Pending | Suspended
+  coursesCount Int      @default(0)
+  joinedAt     DateTime @default(now())
+}
+
+model Course {
+  id       Int      @id @default(autoincrement())
+  name     String
+  category String
+  price    String
+  students Int      @default(0)
+  status   String   @default("Draft") // Published | Draft
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id       Int    @id @default(autoincrement())
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title    String
+  fileName String
+  filePath String
+  size     String
+  duration String @default("—")
+}
+
+model LiveClass {
+  id        Int    @id @default(autoincrement())
+  title     String
+  when      String
+  platform  String
+  attendees Int    @default(0)
+}
+
+model Announcement {
+  id       Int      @id @default(autoincrement())
+  title    String
+  message  String   @default("")
+  audience String
+  sentAt   DateTime @default(now())
+}
+
+model Payment {
+  id      Int    @id @default(autoincrement())
+  student String
+  course  String
+  method  String
+  amount  String
+  status  String // Paid | Pending | Refunded
+  date    DateTime @default(now())
+}
+
+model Broker {
+  id         Int    @id @default(autoincrement())
+  name       String
+  clicks     Int    @default(0)
+  regs       Int    @default(0)
+  conv       String @default("0%")
+  commission Int    @default(0)
+  status     String @default("Active")
+}
+
+model Ticket {
+  id      Int    @id @default(autoincrement())
+  student String
+  subject String
+  status  String @default("Open") // Open | Resolved
+  date    DateTime @default(now())
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+}

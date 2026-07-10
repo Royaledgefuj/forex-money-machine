@@ -1,0 +1,160 @@
+// Student Dashboard — Payments & Support Tickets are backed by the real API;
+// course progress/certificates/leaderboard/downloads have no backing model yet, so they stay illustrative.
+
+const session = Auth.requireRole('student');
+
+if (session) {
+  document.getElementById('userName').textContent = session.name;
+  document.getElementById('userEmail').textContent = session.email;
+  document.getElementById('userAvatar').textContent = session.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
+  document.getElementById('welcomeMsg').textContent = `Welcome back, ${session.name.split(' ')[0]}!`;
+  document.getElementById('profileName').value = session.name;
+  document.getElementById('profileEmail').value = session.email;
+}
+
+// ---- Tab navigation ----
+const navItems = document.querySelectorAll('.dash-nav-item[data-panel]');
+const panels = document.querySelectorAll('.dash-panel[data-panel]');
+const topbarTitle = document.getElementById('topbarTitle');
+const titleMap = {
+  overview: 'Overview', courses: 'My Courses', live: 'Live Classes', certificates: 'Certificates',
+  downloads: 'Downloads & Tools', payments: 'Payments & Brokers', community: 'Community',
+  support: 'Support', profile: 'Profile & Security',
+};
+
+function showPanel(key) {
+  navItems.forEach((n) => n.classList.toggle('active', n.dataset.panel === key));
+  panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === key));
+  topbarTitle.textContent = titleMap[key] || 'Dashboard';
+}
+
+navItems.forEach((item) => item.addEventListener('click', () => showPanel(item.dataset.panel)));
+document.querySelectorAll('[data-nav-to]').forEach((el) => {
+  el.addEventListener('click', (e) => { e.preventDefault(); showPanel(el.dataset.navTo); });
+});
+
+document.getElementById('logoutBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  Auth.logout();
+  window.location.href = 'index.html';
+});
+
+// ---- Mock data ----
+const COURSES = [
+  { name: 'Smart Money Concepts', progress: 68, status: 'in-progress' },
+  { name: 'Beginner Forex Course', progress: 100, status: 'complete' },
+  { name: 'Gold (XAUUSD) Trading', progress: 35, status: 'in-progress' },
+  { name: 'Trading Psychology', progress: 100, status: 'complete' },
+];
+const RECOMMENDED = ['ICT Masterclass', 'Funded Account Program', 'Scalping Masterclass'];
+
+function courseRow(c) {
+  return `<div class="course-row">
+    <div class="thumb">${c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
+    <div class="course-row-info">
+      <strong>${c.name}</strong>
+      <div class="progress-bar"><span style="width:${c.progress}%"></span></div>
+      <span class="progress-pct">${c.progress}% complete</span>
+    </div>
+    <a href="#" class="btn btn-outline btn-sm">${c.progress === 100 ? 'Review' : 'Resume'}</a>
+  </div>`;
+}
+
+document.getElementById('overviewCourses').innerHTML = COURSES.filter((c) => c.status === 'in-progress').map(courseRow).join('');
+document.getElementById('courseList').innerHTML = COURSES.map(courseRow).join('');
+document.getElementById('courseRecommended').innerHTML = RECOMMENDED.map((name) => `
+  <div class="course-row">
+    <div class="thumb">${name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
+    <div class="course-row-info"><strong>${name}</strong><span class="progress-pct">Not enrolled yet</span></div>
+    <a href="index.html#courses" class="btn btn-gold btn-sm">Enroll</a>
+  </div>`).join('');
+
+const LIVE_CLASSES = [
+  { title: 'Weekly Gold (XAUUSD) Market Breakdown', time: 'Today, 8:00 PM GST', tag: 'Live' },
+  { title: 'ICT Kill Zones Workshop', time: 'Thu, Jul 11 · 7:00 PM GST', tag: 'Workshop' },
+  { title: 'Trading Psychology Q&A', time: 'Sat, Jul 13 · 6:00 PM GST', tag: 'Q&A' },
+];
+function liveRow(l) {
+  return `<div class="list-item"><span class="list-dot"></span><div><strong>${l.title}</strong><span>${l.time} · ${l.tag}</span></div></div>`;
+}
+document.getElementById('overviewLive').innerHTML = LIVE_CLASSES.slice(0, 2).map(liveRow).join('');
+document.getElementById('liveSchedule').innerHTML = LIVE_CLASSES.map(liveRow).join('');
+
+const ANNOUNCEMENTS = [
+  { title: 'New Course: Funded Account Program 2.0', time: '2 days ago' },
+  { title: 'Server maintenance for video portal, Jul 12', time: '4 days ago' },
+  { title: 'July trading challenge leaderboard is live', time: '1 week ago' },
+];
+document.getElementById('overviewAnnouncements').innerHTML = ANNOUNCEMENTS.map((a) => `
+  <div class="list-item"><span class="list-dot"></span><div><strong>${a.title}</strong><span>${a.time}</span></div></div>`).join('');
+
+const LEADERBOARD = [
+  { name: 'Sara A.', points: 4820 }, { name: 'David M.', points: 4510 }, { name: session ? session.name : 'You', points: 3990, self: true }, { name: 'Omar T.', points: 3820 },
+];
+document.getElementById('overviewLeaderboard').innerHTML = LEADERBOARD.map((l, i) => `
+  <div class="list-item"><span class="list-dot" style="${l.self ? 'background:var(--up)' : ''}"></span>
+  <div><strong>#${i + 1} ${l.name}${l.self ? ' (You)' : ''}</strong><span>${l.points.toLocaleString()} XP</span></div></div>`).join('');
+
+const CERTIFICATES = [
+  { course: 'Beginner Forex Course', id: 'FMM-2026-00842', earned: true },
+  { course: 'Trading Psychology', id: 'FMM-2026-00913', earned: true },
+  { course: 'Smart Money Concepts', progress: 68, earned: false },
+  { course: 'Gold (XAUUSD) Trading', progress: 35, earned: false },
+];
+document.getElementById('certList').innerHTML = CERTIFICATES.map((c) => `
+  <div class="download-tile">
+    <div class="dt-top"><h4>${c.course}</h4><span class="badge-pill ${c.earned ? 'pill-success' : 'pill-muted'}">${c.earned ? 'Earned' : 'Locked'}</span></div>
+    <p class="meta">${c.earned ? 'Certificate No. ' + c.id : `${c.progress}% complete — finish course to unlock`}</p>
+    ${c.earned ? '<a href="#" class="btn btn-outline btn-sm">Download PDF</a>' : '<button class="btn btn-outline btn-sm" disabled>Locked</button>'}
+  </div>`).join('');
+
+const DOWNLOADS = [
+  { name: 'ICT Order Block Indicator', type: 'TradingView', version: 'v3.2', size: '48 KB' },
+  { name: 'SMC Liquidity EA', type: 'MT4 Expert Advisor', version: 'v1.8', size: '112 KB' },
+  { name: 'Gold Scalper Template', type: 'MT5 Template', version: 'v2.0', size: '20 KB' },
+  { name: 'Risk & Lot Size Calculator', type: 'Excel Sheet', version: 'v4.1', size: '85 KB' },
+  { name: 'Trading Journal Template', type: 'Excel Sheet', version: 'v2.3', size: '64 KB' },
+  { name: 'Funded Account Rules Guide', type: 'PDF Guide', version: 'v1.0', size: '1.2 MB' },
+];
+document.getElementById('downloadList').innerHTML = DOWNLOADS.map((d) => `
+  <div class="download-tile">
+    <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill pill-warn">${d.version}</span></div>
+    <p class="meta">${d.type} · ${d.size}</p>
+    <a href="#" class="btn btn-gold btn-sm">Download</a>
+  </div>`).join('');
+
+async function loadPayments() {
+  const all = await apiFetch('/payments');
+  const mine = all.filter((p) => p.student === session.name);
+  document.getElementById('paymentRows').innerHTML = mine.length ? mine.map((p) => `
+    <tr><td>${new Date(p.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</td><td>${p.course}</td><td>${p.method}</td><td>${p.amount}</td>
+    <td><span class="badge-pill ${p.status === 'Paid' ? 'pill-success' : p.status === 'Pending' ? 'pill-warn' : 'pill-danger'}">${p.status}</span></td><td><a href="#" class="btn btn-outline btn-sm">Invoice</a></td></tr>`).join('')
+    : '<tr><td colspan="6"><p class="empty-note">No payments yet.</p></td></tr>';
+}
+loadPayments();
+
+document.getElementById('brokerAccounts').innerHTML = `
+  <div class="course-row"><div class="thumb">XM</div><div class="course-row-info"><strong>XM Global</strong><span class="progress-pct">Account #88213 · Linked Jun 2026</span></div><span class="badge-pill pill-success">Verified</span></div>
+  <div class="course-row"><div class="thumb">FT</div><div class="course-row-info"><strong>FTMO</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>`;
+
+document.getElementById('dashCommunity').innerHTML = [
+  ['💬', 'WhatsApp'], ['✈️', 'Telegram'], ['🎮', 'Discord'], ['📘', 'Facebook'], ['📸', 'Instagram'], ['▶️', 'YouTube'],
+].map(([icon, name]) => `<a href="#" class="community-item"><span class="c-icon">${icon}</span>${name}</a>`).join('');
+
+async function loadTickets() {
+  const tickets = await apiFetch('/tickets?mine=true');
+  document.getElementById('ticketList').innerHTML = tickets.length ? tickets.map((t) => `
+    <div class="list-item"><span class="list-dot"></span><div><strong>${t.subject}</strong><span>${new Date(t.date).toLocaleDateString()} · <span class="badge-pill ${t.status === 'Open' ? 'pill-warn' : 'pill-success'}">${t.status}</span></span></div></div>`).join('')
+    : '<p class="empty-note">No support tickets yet.</p>';
+}
+loadTickets();
+
+document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const inputs = e.target.querySelectorAll('input, textarea');
+  const subject = inputs[0].value, message = inputs[1].value;
+  await apiFetch('/tickets', { method: 'POST', body: JSON.stringify({ subject, message }) });
+  alert('Ticket submitted! Our support team will respond within 24 hours.');
+  e.target.reset();
+  loadTickets();
+});

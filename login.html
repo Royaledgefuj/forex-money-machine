@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="auth-body">
+
+<div class="bg-noise" aria-hidden="true"></div>
+
+<div class="auth-shell">
+  <div class="auth-panel">
+    <a href="index.html" class="brand auth-brand">
+      <span class="brand-mark">F</span>
+      <span class="brand-text">Forex Money Machine<em>Academy</em></span>
+    </a>
+
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-sub">Log in to access your courses, tools and live classes.</p>
+
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab active" data-tab="login" type="button">Log In</button>
+      <button class="auth-tab" data-tab="signup" type="button">Create Account</button>
+    </div>
+
+    <form id="loginForm" class="auth-form" data-panel="login">
+      <label>Email Address
+        <input type="email" id="loginEmail" placeholder="you@example.com" required>
+      </label>
+      <label>Password
+        <input type="password" id="loginPassword" placeholder="••••••••" required minlength="4">
+      </label>
+      <div class="auth-row">
+        <label class="checkbox"><input type="checkbox" checked> Remember me</label>
+        <a href="#" class="auth-link">Forgot password?</a>
+      </div>
+      <p class="auth-error" id="loginError" hidden>Enter a valid email and a password (4+ characters).</p>
+      <button type="submit" class="btn btn-gold btn-lg auth-submit">Log In</button>
+
+      <div class="auth-divider"><span>or continue with</span></div>
+      <div class="auth-social">
+        <button type="button" class="btn btn-outline">Google</button>
+        <button type="button" class="btn btn-outline">Facebook</button>
+        <button type="button" class="btn btn-outline">Apple</button>
+      </div>
+
+      <div class="auth-demo">
+        <p>Demo access — no real account needed:</p>
+        <div class="auth-demo-buttons">
+          <button type="button" class="btn btn-ghost btn-sm" id="demoStudentBtn">Continue as Demo Student</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="demoAdminBtn">Continue as Demo Admin</button>
+        </div>
+      </div>
+    </form>
+
+    <form id="signupForm" class="auth-form" data-panel="signup" hidden>
+      <label>Full Name
+        <input type="text" id="signupName" placeholder="Your name" required>
+      </label>
+      <label>Email Address
+        <input type="email" id="signupEmail" placeholder="you@example.com" required>
+      </label>
+      <label>Password
+        <input type="password" id="signupPassword" placeholder="Minimum 6 characters" required minlength="6">
+      </label>
+      <label class="checkbox full"><input type="checkbox" required> I agree to the Terms &amp; Privacy Policy</label>
+      <button type="submit" class="btn btn-gold btn-lg auth-submit">Create Account</button>
+      <p class="auth-note">New accounts are created as Student access in this demo.</p>
+    </form>
+  </div>
+
+  <div class="auth-side">
+    <div class="auth-side-content">
+      <p class="eyebrow"><span class="eyebrow-dot"></span>40,000+ Traders Trained</p>
+      <h2>Trade With an Edge</h2>
+      <p>Log in to continue your Smart Money Concepts course, download this week's indicators and join tonight's live session.</p>
+      <ul class="auth-side-list">
+        <li>✔ Full course library &amp; progress tracking</li>
+        <li>✔ Indicators, EAs &amp; risk calculators</li>
+        <li>✔ Live classes &amp; private community</li>
+        <li>✔ Certificates on course completion</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js?v=2"></script>
+<script>
+  const tabs = document.querySelectorAll('.auth-tab');
+  const panels = { login: document.getElementById('loginForm'), signup: document.getElementById('signupForm') };
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      Object.entries(panels).forEach(([key, panel]) => { panel.hidden = key !== tab.dataset.tab; });
+    });
+  });
+
+  function goToDashboard(session) {
+    window.location.href = session.role === 'admin' ? 'dashboard-admin.html' : 'dashboard-student.html';
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+    const submitBtn = e.target.querySelector('.auth-submit');
+    submitBtn.disabled = true;
+    try {
+      const session = await Auth.login(email, password);
+      if (session) { errorEl.hidden = true; goToDashboard(session); }
+      else { errorEl.textContent = 'Invalid email or password.'; errorEl.hidden = false; submitBtn.disabled = false; }
+    } catch (err) {
+      errorEl.textContent = 'Could not reach the server. Is the API running?';
+      errorEl.hidden = false;
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('signupName').value || 'New Student';
+    const email = document.getElementById('signupEmail').value || 'student@example.com';
+    const password = document.getElementById('signupPassword').value;
+    try {
+      const session = await Auth.register(name, email, password);
+      goToDashboard(session);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  document.getElementById('demoStudentBtn').addEventListener('click', async () => goToDashboard(await Auth.loginDemo('student')));
+  document.getElementById('demoAdminBtn').addEventListener('click', async () => goToDashboard(await Auth.loginDemo('admin')));
+
+  // If already logged in with a real token, skip straight to dashboard.
+  const existing = Auth.getSession();
+  if (existing && existing.token) goToDashboard(existing);
+  else if (existing) Auth.logout();
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body class="dash-body">
+<div class="bg-noise" aria-hidden="true"></div>
+
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">F</span>
+      <span class="brand-text">Forex Money Machine<em>Academy</em></span>
+    </a>
+
+    <nav class="dash-nav" id="dashNav">
+      <button class="dash-nav-item active" data-panel="overview"><span class="ic">🏠</span>Overview</button>
+      <button class="dash-nav-item" data-panel="courses"><span class="ic">🎓</span>My Courses</button>
+      <button class="dash-nav-item" data-panel="live"><span class="ic">🔴</span>Live Classes</button>
+      <button class="dash-nav-item" data-panel="certificates"><span class="ic">📜</span>Certificates</button>
+      <button class="dash-nav-item" data-panel="downloads"><span class="ic">⬇️</span>Downloads &amp; Tools</button>
+      <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments &amp; Brokers</button>
+      <button class="dash-nav-item" data-panel="community"><span class="ic">👥</span>Community</button>
+      <button class="dash-nav-item" data-panel="support"><span class="ic">🎧</span>Support</button>
+      <button class="dash-nav-item" data-panel="profile"><span class="ic">⚙️</span>Profile &amp; Security</button>
+    </nav>
+
+    <div class="dash-sidebar-footer">
+      <a href="index.html" class="dash-nav-item">🏳️ Back to Website</a>
+      <a href="#" id="logoutBtn" class="dash-nav-item">🚪 Log Out</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <h1 id="topbarTitle">Overview</h1>
+      <div class="dash-user">
+        <div class="dash-user-meta">
+          <strong id="userName">—</strong>
+          <span id="userEmail">—</span>
+        </div>
+        <div class="avatar" id="userAvatar">—</div>
+      </div>
+    </header>
+
+    <main class="dash-content">
+
+      <!-- OVERVIEW -->
+      <section class="dash-panel active" data-panel="overview">
+        <div class="dash-welcome">
+          <div>
+            <h2 id="welcomeMsg">Welcome back!</h2>
+            <p>You're 68% through Smart Money Concepts. Keep the streak going — 3 lessons left this week.</p>
+          </div>
+          <a href="#" class="btn btn-gold" data-nav-to="courses">Resume Learning</a>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><span class="ic">🎓</span><span class="delta up">+1 this month</span></div><span class="num">4</span><span class="label">Enrolled Courses</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">📜</span><span class="delta up">2 issued</span></div><span class="num">2</span><span class="label">Certificates Earned</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">✅</span><span class="delta up">+12% wk</span></div><span class="num">61%</span><span class="label">Avg. Completion</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">🏅</span><span class="delta up">Top 8%</span></div><span class="num">6</span><span class="label">Badges Unlocked</span></div>
+        </div>
+
+        <div class="panel-grid">
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>Continue Watching</h3><a href="#" data-nav-to="courses">View all courses</a></div>
+              <div id="overviewCourses"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Upcoming Live Classes</h3><a href="#" data-nav-to="live">View schedule</a></div>
+              <div id="overviewLive"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>Announcements</h3></div>
+              <div id="overviewAnnouncements"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Leaderboard</h3></div>
+              <div id="overviewLeaderboard"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MY COURSES -->
+      <section class="dash-panel" data-panel="courses">
+        <div class="card">
+          <div class="card-head"><h3>Enrolled Courses</h3><span class="mini-note">4 active</span></div>
+          <div id="courseList"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Recommended Next</h3></div>
+          <div id="courseRecommended"></div>
+        </div>
+      </section>
+
+      <!-- LIVE CLASSES -->
+      <section class="dash-panel" data-panel="live">
+        <div class="panel-grid">
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>Live Now / Next Session</h3><span class="badge-pill pill-danger">● Starts in 2h 14m</span></div>
+              <div class="live-embed">
+                <div class="live-embed-placeholder">
+                  <span>🔴</span>
+                  <p>Weekly Gold (XAUUSD) Market Breakdown</p>
+                  <span class="mini-note">Live stream embed appears here when the session starts</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Live Chat</h3></div>
+              <div class="chat-box">
+                <div class="chat-msg"><strong>Sara A.</strong><span>Excited for today's session on order blocks 🔥</span></div>
+                <div class="chat-msg"><strong>David M.</strong><span>Will this session be recorded?</span></div>
+                <div class="chat-msg"><strong>Instructor</strong><span>Yes — replay uploads within 24h to Recorded Lessons.</span></div>
+              </div>
+              <div class="chat-input-row">
+                <input type="text" placeholder="Ask a question…" disabled>
+                <button class="btn btn-gold btn-sm" disabled>Send</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="card">
+              <div class="card-head"><h3>Upcoming Schedule</h3></div>
+              <div id="liveSchedule"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Your Attendance</h3></div>
+              <div class="stat-grid" style="grid-template-columns:1fr 1fr; margin-bottom:0;">
+                <div class="stat-card"><span class="num">14</span><span class="label">Sessions Attended</span></div>
+                <div class="stat-card"><span class="num">92%</span><span class="label">Attendance Rate</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CERTIFICATES -->
+      <section class="dash-panel" data-panel="certificates">
+        <div class="card">
+          <div class="card-head"><h3>Your Certificates</h3></div>
+          <div class="tile-grid" id="certList"></div>
+        </div>
+      </section>
+
+      <!-- DOWNLOADS -->
+      <section class="dash-panel" data-panel="downloads">
+        <div class="card">
+          <div class="card-head"><h3>Indicators, Tools &amp; Guides</h3><span class="mini-note">Access included with your membership</span></div>
+          <div class="tile-grid" id="downloadList"></div>
+        </div>
+      </section>
+
+      <!-- PAYMENTS -->
+      <section class="dash-panel" data-panel="payments">
+        <div class="card">
+          <div class="card-head"><h3>Payment History</h3></div>
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead><tr><th>Date</th><th>Description</th><th>Method</th><th>Amount</th><th>Status</th><th>Invoice</th></tr></thead>
+              <tbody id="paymentRows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Linked Broker Accounts</h3><a href="index.html#brokers">+ Link a broker</a></div>
+          <div id="brokerAccounts"></div>
+        </div>
+      </section>
+
+      <!-- COMMUNITY -->
+      <section class="dash-panel" data-panel="community">
+        <div class="card">
+          <div class="card-head"><h3>Join the Community</h3></div>
+          <div class="community-grid" id="dashCommunity" style="grid-template-columns:repeat(3,1fr)"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Referral Earnings</h3><span class="badge-pill pill-success">Active</span></div>
+          <p class="mini-note" style="margin-bottom:16px;">Share your referral link — earn 15% commission when friends enroll.</p>
+          <div class="form-grid">
+            <div class="form-field full">
+              <label>Your referral link</label>
+              <input type="text" readonly value="https://forexmoneymachine.academy/ref/rayan-k92">
+            </div>
+          </div>
+          <div class="stat-grid" style="margin-top:18px;">
+            <div class="stat-card"><span class="num">7</span><span class="label">Referrals</span></div>
+            <div class="stat-card"><span class="num">$340</span><span class="label">Earnings</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SUPPORT -->
+      <section class="dash-panel" data-panel="support">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="card-head"><h3>Your Tickets</h3></div>
+            <div id="ticketList"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>New Support Ticket</h3></div>
+            <form class="form-grid" id="ticketForm">
+              <div class="form-field full"><label>Subject</label><input type="text" placeholder="e.g. Can't access ICT Masterclass video" required></div>
+              <div class="form-field full"><label>Message</label><textarea placeholder="Describe your issue…" required></textarea></div>
+              <div class="form-field full"><button type="submit" class="btn btn-gold">Submit Ticket</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section class="dash-panel" data-panel="profile">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="card-head"><h3>Profile Details</h3></div>
+            <form class="form-grid">
+              <div class="form-field"><label>Full Name</label><input type="text" id="profileName"></div>
+              <div class="form-field"><label>Email</label><input type="email" id="profileEmail" disabled></div>
+              <div class="form-field"><label>Country</label><input type="text" placeholder="United Arab Emirates"></div>
+              <div class="form-field"><label>Phone</label><input type="text" placeholder="+971 5X XXX XXXX"></div>
+              <div class="form-field full"><button type="submit" class="btn btn-gold" style="justify-self:start">Save Changes</button></div>
+            </form>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Security</h3></div>
+            <div class="list-item"><span class="list-dot"></span><div><strong>Two-Factor Authentication</strong><span>Add an extra layer of protection to your account</span></div></div>
+            <div class="list-item"><span class="list-dot"></span><div><strong>Login History</strong><span>Last login: Today, 09:41 from Dubai, UAE</span></div></div>
+            <div class="list-item"><span class="list-dot"></span><div><strong>Active Devices</strong><span>2 devices currently signed in</span></div></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="js/auth.js?v=2"></script>
+<script src="js/dashboard-student.js?v=2"></script>
+</body>
+</html>
