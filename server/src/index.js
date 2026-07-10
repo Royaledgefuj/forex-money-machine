@@ -22,10 +22,10 @@ app.use('/api/activity', require('./routes/activity'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-// Serve the static frontend (index.html, login.html, dashboards, css/, js/) so the
-// whole site deploys as a single Node service. In local dev this folder is normally
-// served separately by devserver.py on :5173, but serving it here too is harmless.
-app.use(express.static(path.join(__dirname, '..', '..')));
+// Serve the static frontend (index.html, login.html, dashboards, css/, js/) from
+// server/public so the whole site deploys as a single Node service — this folder
+// is inside the Railway build root (/server), unlike the old repo-root location.
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use((err, req, res, next) => {
   console.error(err);
