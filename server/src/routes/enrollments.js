@@ -34,12 +34,13 @@ router.get('/mine', requireAuth, async (req, res) => {
   res.json({ membershipTier: user.membershipTier, accessible, notAccessible });
 });
 
-// Revoke a student's access to a course (e.g. to correct a mistaken enrollment).
-router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  const enrollment = await prisma.enrollment.findUnique({ where: { id } });
+// Revoke a student's access to a specific course (e.g. to correct a mistaken enrollment).
+router.delete('/:userId/:courseId', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  const courseId = Number(req.params.courseId);
+  const enrollment = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
   if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
-  await prisma.enrollment.delete({ where: { id } });
+  await prisma.enrollment.delete({ where: { userId_courseId: { userId, courseId } } });
   res.json({ ok: true });
 });
 
