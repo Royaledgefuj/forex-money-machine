@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  announcements: 'Announcements', payments: 'Payments', brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
+  announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
   navItems.forEach((n) => n.classList.toggle('active', n.dataset.panel === key));
@@ -258,7 +258,8 @@ async function loadPayments() {
   PAYMENTS = await apiFetch('/payments');
   const map = { Paid: 'pill-success', Pending: 'pill-warn', Refunded: 'pill-danger' };
   document.getElementById('txnRows').innerHTML = PAYMENTS.map((t) => `
-    <tr><td>${t.student}</td><td>${t.course}</td><td>${t.method}</td><td>${t.amount}</td>
+    <tr><td>${t.student}</td><td>${t.course}</td><td>${t.method}${t.reference ? `<br><span class="mini-note">Ref: ${t.reference}</span>` : ''}</td><td>${t.amount}</td>
+      <td>${t.proofUrl ? `<a href="${MEDIA_BASE}${t.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a>` : '—'}</td>
       <td><span class="badge-pill ${map[t.status]}">${t.status}</span></td>
       <td>${t.status === 'Pending' ? `<button class="btn btn-outline btn-sm" data-approve="${t.id}">Approve</button>` : '<button class="btn btn-outline btn-sm">Invoice</button>'}</td></tr>`).join('');
   return PAYMENTS;
@@ -268,6 +269,77 @@ document.getElementById('txnRows').addEventListener('click', async (e) => {
   if (!btn) return;
   await apiFetch(`/payments/${btn.dataset.approve}`, { method: 'PATCH', body: JSON.stringify({ status: 'Paid' }) });
   await Promise.all([loadPayments(), loadActivity(), refreshRevenue()]);
+});
+
+// ================= PAYMENT METHODS =================
+let PAYMENT_METHODS = [];
+async function loadPaymentMethods() {
+  PAYMENT_METHODS = await apiFetch('/payment-methods');
+  document.getElementById('paymentMethodRows').innerHTML = PAYMENT_METHODS.length ? PAYMENT_METHODS.map((m) => `
+    <div class="lesson-item">
+      <div class="lesson-ic">🏦</div>
+      <div class="lesson-info">
+        <strong>${m.name} ${m.active ? '<span class="badge-pill pill-success">Active</span>' : '<span class="badge-pill pill-muted">Hidden</span>'}</strong>
+        <span>${m.instructions}</span>
+      </div>
+      <div class="row-actions">
+        <button class="icon-btn" title="Edit" data-action="edit" data-id="${m.id}">✎</button>
+        <button class="icon-btn" title="${m.active ? 'Hide from students' : 'Show to students'}" data-action="toggle" data-id="${m.id}">${m.active ? '🙈' : '👁'}</button>
+        <button class="icon-btn danger" title="Delete" data-action="delete" data-id="${m.id}">🗑</button>
+      </div>
+    </div>`).join('') : '<p class="empty-note">No payment methods yet. Add one so students can pay you.</p>';
+  return PAYMENT_METHODS;
+}
+
+const pmForm = document.getElementById('paymentMethodForm');
+function resetPmForm() {
+  pmForm.reset();
+  document.getElementById('pmId').value = '';
+  document.getElementById('pmActive').checked = true;
+  document.getElementById('pmFormTitle').textContent = 'Add Payment Method';
+  document.getElementById('pmSubmitBtn').textContent = 'Add Method';
+  document.getElementById('pmCancelBtn').hidden = true;
+}
+
+document.getElementById('paymentMethodRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const method = PAYMENT_METHODS.find((m) => m.id === Number(btn.dataset.id));
+  if (btn.dataset.action === 'edit') {
+    document.getElementById('pmId').value = method.id;
+    document.getElementById('pmName').value = method.name;
+    document.getElementById('pmInstructions').value = method.instructions;
+    document.getElementById('pmActive').checked = method.active;
+    document.getElementById('pmFormTitle').textContent = `Edit "${method.name}"`;
+    document.getElementById('pmSubmitBtn').textContent = 'Save Changes';
+    document.getElementById('pmCancelBtn').hidden = false;
+    pmForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  if (btn.dataset.action === 'toggle') {
+    await apiFetch(`/payment-methods/${method.id}`, { method: 'PATCH', body: JSON.stringify({ active: !method.active }) });
+  }
+  if (btn.dataset.action === 'delete') {
+    if (!confirm(`Delete payment method "${method.name}"?`)) return;
+    await apiFetch(`/payment-methods/${method.id}`, { method: 'DELETE' });
+  }
+  await Promise.all([loadPaymentMethods(), loadActivity()]);
+});
+
+document.getElementById('pmCancelBtn').addEventListener('click', resetPmForm);
+
+pmForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('pmId').value;
+  const body = JSON.stringify({
+    name: document.getElementById('pmName').value,
+    instructions: document.getElementById('pmInstructions').value,
+    active: document.getElementById('pmActive').checked,
+  });
+  if (id) await apiFetch(`/payment-methods/${id}`, { method: 'PATCH', body });
+  else await apiFetch('/payment-methods', { method: 'POST', body });
+  resetPmForm();
+  await Promise.all([loadPaymentMethods(), loadActivity()]);
 });
 
 // ================= BROKERS =================
@@ -372,7 +444,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadAnnouncements(), loadPayments(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

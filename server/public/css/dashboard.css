@@ -183,6 +183,26 @@ table.dash-table{ width:100%; border-collapse:collapse; font-size:.88rem; }
 .mini-note{ font-size:.78rem; color: var(--muted-dim); }
 .empty-note{ text-align:center; padding:32px; color: var(--muted-dim); font-size:.88rem; }
 
+/* ===== Payment modal ===== */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(5,7,12,0.72); backdrop-filter: blur(4px);
+  display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.modal-overlay[hidden]{ display:none; }
+.modal-box{
+  background: var(--card-bg); border:1px solid var(--border); border-radius: var(--radius);
+  padding:28px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto;
+}
+.modal-box .card-head{ margin-bottom:16px; }
+.modal-box .card-head h3{ margin:0; }
+.modal-close{ background:none; border:none; color:var(--muted); font-size:1.4rem; line-height:1; cursor:pointer; padding:0; }
+.modal-close:hover{ color:var(--white); }
+.pay-instructions{
+  background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:14px 16px;
+  font-size:.85rem; color: var(--muted); white-space:pre-wrap; margin-top:6px;
+}
+.modal-error{ color: var(--down); font-size:.82rem; margin:0; }
+
 /* Live class embed + chat */
 .live-embed{ border-radius:12px; overflow:hidden; aspect-ratio:16/9; background: linear-gradient(135deg, var(--navy), var(--black)); border:1px solid var(--border); }
 .live-embed-placeholder{ height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; }

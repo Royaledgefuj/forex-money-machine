@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/dashboard.css?v=2">
 </head>
 <body class="dash-body">
 <div class="bg-noise" aria-hidden="true"></div>
@@ -27,6 +27,7 @@
       <button class="dash-nav-item" data-panel="live"><span class="ic">🔴</span>Live Classes</button>
       <button class="dash-nav-item" data-panel="announcements"><span class="ic">📣</span>Announcements</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments</button>
+      <button class="dash-nav-item" data-panel="paymentMethods"><span class="ic">🏦</span>Payment Methods</button>
       <button class="dash-nav-item" data-panel="brokers"><span class="ic">🤝</span>Broker Referrals</button>
       <button class="dash-nav-item" data-panel="support"><span class="ic">🎧</span>Support Tickets</button>
       <button class="dash-nav-item" data-panel="activity"><span class="ic">🗒️</span>Activity Log</button>
@@ -213,7 +214,7 @@
             <div class="card-head"><h3>Recent Transactions</h3></div>
             <div class="table-wrap">
               <table class="dash-table">
-                <thead><tr><th>Student</th><th>Course</th><th>Method</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Student</th><th>Course</th><th>Method</th><th>Amount</th><th>Proof</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody id="txnRows"></tbody>
               </table>
             </div>
@@ -222,6 +223,32 @@
             <div class="card-head"><h3>Revenue by Source</h3></div>
             <div id="revenueBreakdownPayments"></div>
             <p class="mini-note" style="margin-top:12px;">Broker IB commissions are pulled live from the <a href="#" data-nav-to="brokers" style="color:var(--gold-light);font-weight:600;">Broker Referrals</a> tab.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAYMENT METHODS -->
+      <section class="dash-panel" data-panel="paymentMethods">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="card-head"><h3>Payment Methods Students See</h3></div>
+            <p class="mini-note" style="margin-bottom:12px;">Edit the instructions below to include your real wallet address, Ziina link, or bank details. Only "Active" methods are shown to students when they request membership or a course.</p>
+            <div id="paymentMethodRows" class="lesson-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3 id="pmFormTitle">Add Payment Method</h3></div>
+            <form class="form-grid" id="paymentMethodForm">
+              <input type="hidden" id="pmId">
+              <div class="form-field full"><label>Method Name</label><input type="text" id="pmName" placeholder="e.g. USDT (TRC20)" required></div>
+              <div class="form-field full"><label>Instructions shown to students</label><textarea id="pmInstructions" placeholder="Wallet address, bank details, or payment link…" required></textarea></div>
+              <div class="form-field full">
+                <label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="pmActive" checked style="width:auto;"> Active (visible to students)</label>
+              </div>
+              <div class="form-field full" style="display:flex; gap:10px;">
+                <button type="submit" class="btn btn-gold" id="pmSubmitBtn">Add Method</button>
+                <button type="button" class="btn btn-outline" id="pmCancelBtn" hidden>Cancel Edit</button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
@@ -266,6 +293,6 @@
 </div>
 
 <script src="js/auth.js?v=2"></script>
-<script src="js/dashboard-admin.js?v=2"></script>
+<script src="js/dashboard-admin.js?v=3"></script>
 </body>
 </html>

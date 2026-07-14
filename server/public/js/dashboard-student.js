@@ -66,11 +66,16 @@ async function loadEnrollments() {
     <div class="course-row">
       <div class="thumb">${c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
       <div class="course-row-info"><strong>${c.name}</strong><span class="progress-pct">${c.price} · or included with Silver+ membership</span></div>
-      <a href="index.html#courses" class="btn btn-gold btn-sm">Enroll</a>
+      <button class="btn btn-gold btn-sm" data-buy-course="${c.id}" data-buy-name="${c.name}" data-buy-amount="${c.price}">Enroll</button>
     </div>`).join('')
     : '<p class="empty-note">You have access to every course. 🎉</p>';
 }
 loadEnrollments();
+document.getElementById('courseRecommended').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-buy-course]');
+  if (!btn) return;
+  openPaymentModal({ kind: 'course', courseId: btn.dataset.buyCourse, name: btn.dataset.buyName, amount: btn.dataset.buyAmount });
+});
 
 // Any paid tier (Silver/Gold/Platinum) unlocks all live classes; Free members see them locked.
 function liveRow(l, unlocked) {
@@ -195,19 +200,11 @@ function renderMembership() {
   }).join('');
 }
 
-document.getElementById('membershipPlans').addEventListener('click', async (e) => {
+document.getElementById('membershipPlans').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-request-tier]');
   if (!btn) return;
-  btn.disabled = true;
-  try {
-    await apiFetch('/membership/request', { method: 'POST', body: JSON.stringify({ tier: btn.dataset.requestTier }) });
-    await loadPendingMembershipRequests();
-    renderMembership();
-    alert(`Upgrade request sent! An admin will review and approve your ${btn.dataset.requestTier} membership shortly.`);
-  } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-  }
+  const tier = btn.dataset.requestTier;
+  openPaymentModal({ kind: 'membership', tier, name: `${tier} Membership`, amount: `$${MEMBERSHIP_TIERS[tier].price.toFixed(2)}` });
 });
 
 async function loadPendingMembershipRequests() {
@@ -225,6 +222,83 @@ async function refreshMembershipTier() {
   renderMembership();
 }
 refreshMembershipTier();
+
+// ================= PAYMENT MODAL (shared: membership + course purchases) =================
+let PAYMENT_METHODS = [];
+let currentPaymentRequest = null;
+
+const payModal = document.getElementById('payModal');
+const payForm = document.getElementById('payForm');
+const payMethodSelect = document.getElementById('payMethod');
+const payInstructions = document.getElementById('payInstructions');
+const payError = document.getElementById('payError');
+
+async function openPaymentModal(request) {
+  currentPaymentRequest = request;
+  payError.hidden = true;
+  payForm.reset();
+  document.getElementById('payModalTitle').textContent = `Pay for ${request.name}`;
+  document.getElementById('payModalAmount').textContent = `Amount due: ${request.amount}`;
+
+  if (!PAYMENT_METHODS.length) PAYMENT_METHODS = await apiFetch('/payment-methods');
+  payMethodSelect.innerHTML = PAYMENT_METHODS.map((m) => `<option value="${m.name}">${m.name}</option>`).join('');
+  updatePayInstructions();
+
+  payModal.hidden = false;
+}
+
+function updatePayInstructions() {
+  const method = PAYMENT_METHODS.find((m) => m.name === payMethodSelect.value);
+  payInstructions.textContent = method ? method.instructions : 'Select a payment method above.';
+}
+payMethodSelect.addEventListener('change', updatePayInstructions);
+
+function closePaymentModal() { payModal.hidden = true; currentPaymentRequest = null; }
+document.getElementById('payModalClose').addEventListener('click', closePaymentModal);
+payModal.addEventListener('click', (e) => { if (e.target === payModal) closePaymentModal(); });
+
+payForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!currentPaymentRequest) return;
+  const fileInput = document.getElementById('payProof');
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const submitBtn = document.getElementById('paySubmitBtn');
+  submitBtn.disabled = true;
+  payError.hidden = true;
+
+  try {
+    const proofData = new FormData();
+    proofData.append('proof', file);
+    const { url: proofUrl } = await apiFetch('/payments/upload-proof', { method: 'POST', body: proofData });
+
+    const body = {
+      method: payMethodSelect.value,
+      proofUrl,
+      reference: document.getElementById('payReference').value || undefined,
+    };
+
+    if (currentPaymentRequest.kind === 'membership') {
+      body.tier = currentPaymentRequest.tier;
+      await apiFetch('/membership/request', { method: 'POST', body: JSON.stringify(body) });
+      await loadPendingMembershipRequests();
+      renderMembership();
+    } else {
+      await apiFetch(`/courses/${currentPaymentRequest.courseId}/purchase-request`, { method: 'POST', body: JSON.stringify(body) });
+      await loadEnrollments();
+    }
+
+    await loadPayments();
+    closePaymentModal();
+    alert('Payment submitted! An admin will review your proof and approve access shortly.');
+  } catch (err) {
+    payError.textContent = err.message;
+    payError.hidden = false;
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
 
 async function loadPayments() {
   const all = await apiFetch('/payments');
