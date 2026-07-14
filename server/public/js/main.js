@@ -2,6 +2,14 @@
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
+// ---- Next batch date (always the 1st of the upcoming month) ----
+const nextBatchBadge = document.getElementById('nextBatchBadge');
+if (nextBatchBadge) {
+  const now = new Date();
+  const nextBatch = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  nextBatchBadge.textContent = `Next batch starts ${nextBatch.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}`;
+}
+
 // ---- Mobile nav toggle ----
 const navToggle = document.getElementById('navToggle');
 const mainNav = document.getElementById('mainNav');
@@ -36,7 +44,7 @@ const statObserver = new IntersectionObserver((entries) => {
 stats.forEach((s) => statObserver.observe(s));
 
 // ---- Reveal on scroll ----
-const revealTargets = document.querySelectorAll('.about-card, .course-card, .broker-card, .testimonial, .tool-item, .community-item');
+const revealTargets = document.querySelectorAll('.about-card, .program-card, .broker-card, .testimonial, .tool-item, .community-item');
 revealTargets.forEach((el) => { el.style.opacity = 0; el.style.transform = 'translateY(18px)'; el.style.transition = 'opacity .6s ease, transform .6s ease'; });
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {

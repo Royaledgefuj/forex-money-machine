@@ -24,11 +24,20 @@ async function enrollUserInCourse(userId, courseId, source = 'purchase') {
   });
 }
 
-// When a new course is published, auto-enroll every existing paid member.
+// When a new course is published, auto-enroll every existing paid member,
+// plus anyone who separately bought the courses-only "All-Access Trading Program" bundle.
 async function enrollAllMembersInCourse(courseId) {
   const members = await prisma.user.findMany({ where: { role: 'student', membershipTier: { in: PAID_TIERS } } });
   for (const member of members) {
     await enrollUserInCourse(member.id, courseId, 'membership');
+  }
+
+  const bundleBuyers = await prisma.payment.findMany({
+    where: { course: 'All-Access Trading Program', status: 'Paid', userId: { not: null } },
+    distinct: ['userId'],
+  });
+  for (const payment of bundleBuyers) {
+    await enrollUserInCourse(payment.userId, courseId, 'purchase');
   }
 }
 

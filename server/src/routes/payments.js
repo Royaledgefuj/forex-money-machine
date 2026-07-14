@@ -10,6 +10,7 @@ const { enrollUserInAllCourses, enrollUserInCourse } = require('../enrollment');
 const router = express.Router();
 
 const MEMBERSHIP_TIERS = ['Silver', 'Gold', 'Platinum'];
+const BUNDLE_COURSE_NAME = 'All-Access Trading Program';
 
 // Payment-proof screenshots (separate from course video uploads).
 const proofsDir = process.env.UPLOADS_DIR
@@ -50,6 +51,10 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
       await logActivity(`Upgraded ${payment.student} to ${tier} membership`);
       // Membership is an all-access pass: unlock every published course.
       await enrollUserInAllCourses(payment.userId, 'membership');
+    } else if (payment.course === BUNDLE_COURSE_NAME) {
+      // The bundle course is a courses-only all-access pass (no tools/indicators/live-class tier perks).
+      await enrollUserInAllCourses(payment.userId, 'purchase');
+      await logActivity(`Enrolled ${payment.student} in all courses via the bundle program`);
     } else if (payment.courseId) {
       await enrollUserInCourse(payment.userId, payment.courseId, 'purchase');
       await logActivity(`Enrolled ${payment.student} in course #${payment.courseId}`);
