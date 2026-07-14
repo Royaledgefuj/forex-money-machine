@@ -12,7 +12,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 
 router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
-  const { status, membershipTier } = req.body;
+  const { status, membershipTier, signalsAccess } = req.body;
   const data = {};
 
   if (status !== undefined) {
@@ -23,10 +23,12 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (!['Free', 'Silver', 'Gold', 'Platinum'].includes(membershipTier)) return res.status(400).json({ error: 'Invalid membership tier' });
     data.membershipTier = membershipTier;
   }
+  if (signalsAccess !== undefined) data.signalsAccess = !!signalsAccess;
 
   const student = await prisma.user.update({ where: { id }, data });
   if (status !== undefined) await logActivity(`${status === 'Active' ? 'Approved' : 'Suspended'} student ${student.name}`);
   if (membershipTier !== undefined) await logActivity(`Set ${student.name}'s membership to ${membershipTier}`);
+  if (signalsAccess !== undefined) await logActivity(`${signalsAccess ? 'Granted' : 'Revoked'} ${student.name}'s signals access`);
   res.json(student);
 });
 

@@ -352,18 +352,24 @@ async function loadSignals() {
     <tr><td>${s.user.name}</td><td>${s.broker}</td><td>${s.amount}</td>
       <td><a href="${MEDIA_BASE}${s.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a></td>
       <td><span class="badge-pill ${map[s.status]}">${s.status}</span></td>
-      <td>${s.status === 'Pending' ? `
-        <div class="row-actions">
+      <td><div class="row-actions">
+        ${s.status === 'Pending' ? `
           <button class="icon-btn" title="Approve" data-action="approve" data-id="${s.id}">✔</button>
-          <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${s.id}">✕</button>
-        </div>` : '—'}</td></tr>`).join('')
+          <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${s.id}">✕</button>` : ''}
+        <button class="icon-btn danger" title="Delete" data-action="delete" data-id="${s.id}">🗑</button>
+      </div></td></tr>`).join('')
     : '<tr><td colspan="6"><p class="empty-note">No signals submissions yet.</p></td></tr>';
 }
 document.getElementById('signalRows').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
-  const status = btn.dataset.action === 'approve' ? 'Approved' : 'Rejected';
-  await apiFetch(`/signals/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  if (btn.dataset.action === 'delete') {
+    if (!confirm('Delete this submission?')) return;
+    await apiFetch(`/signals/${btn.dataset.id}`, { method: 'DELETE' });
+  } else {
+    const status = btn.dataset.action === 'approve' ? 'Approved' : 'Rejected';
+    await apiFetch(`/signals/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  }
   await Promise.all([loadSignals(), loadActivity()]);
 });
 

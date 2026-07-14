@@ -79,14 +79,25 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   const { status } = req.body;
   if (!['Approved', 'Rejected', 'Pending'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
+  if (status === 'Approved') {
+    const current = await prisma.signalProof.findUnique({ where: { id } });
+    await prisma.user.update({ where: { id: current.userId }, data: { signalsAccess: true } });
+  }
   const proof = await prisma.signalProof.update({ where: { id }, data: { status }, include: { user: true } });
   if (status === 'Approved') {
-    await prisma.user.update({ where: { id: proof.userId }, data: { signalsAccess: true } });
     await logActivity(`Granted ${proof.user.name} signals access (${proof.broker} deposit verified)`);
   } else {
     await logActivity(`Marked ${proof.user.name}'s signals deposit proof as ${status}`);
   }
   res.json(proof);
+});
+
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const proof = await prisma.signalProof.findUnique({ where: { id } });
+  if (!proof) return res.status(404).json({ error: 'Submission not found' });
+  await prisma.signalProof.delete({ where: { id } });
+  res.json({ ok: true });
 });
 
 module.exports = router;
