@@ -35,4 +35,13 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   res.json(payment);
 });
 
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const payment = await prisma.payment.findUnique({ where: { id } });
+  if (!payment) return res.status(404).json({ error: 'Payment not found' });
+  await prisma.payment.delete({ where: { id } });
+  await logActivity(`Deleted payment record for ${payment.student} (${payment.course})`);
+  res.json({ ok: true });
+});
+
 module.exports = router;

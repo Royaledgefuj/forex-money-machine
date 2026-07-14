@@ -1,6 +1,6 @@
 const express = require('express');
 const prisma = require('../prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { PAID_TIERS } = require('../enrollment');
 
 const router = express.Router();
@@ -32,6 +32,15 @@ router.get('/mine', requireAuth, async (req, res) => {
   }
 
   res.json({ membershipTier: user.membershipTier, accessible, notAccessible });
+});
+
+// Revoke a student's access to a course (e.g. to correct a mistaken enrollment).
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const enrollment = await prisma.enrollment.findUnique({ where: { id } });
+  if (!enrollment) return res.status(404).json({ error: 'Enrollment not found' });
+  await prisma.enrollment.delete({ where: { id } });
+  res.json({ ok: true });
 });
 
 module.exports = router;
