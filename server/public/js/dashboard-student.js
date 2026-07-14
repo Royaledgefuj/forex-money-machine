@@ -134,12 +134,17 @@ async function loadPayments() {
 loadPayments();
 
 document.getElementById('brokerAccounts').innerHTML = `
-  <div class="course-row"><div class="thumb">XM</div><div class="course-row-info"><strong>XM Global</strong><span class="progress-pct">Account #88213 · Linked Jun 2026</span></div><span class="badge-pill pill-success">Verified</span></div>
-  <div class="course-row"><div class="thumb">FT</div><div class="course-row-info"><strong>FTMO</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>`;
+  <div class="course-row"><div class="thumb">EX</div><div class="course-row-info"><strong>Exness</strong><span class="progress-pct">Account #88213 · Linked Jun 2026</span></div><span class="badge-pill pill-success">Verified</span></div>
+  <div class="course-row"><div class="thumb">PU</div><div class="course-row-info"><strong>PU Prime</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>
+  <div class="course-row"><div class="thumb">JM</div><div class="course-row-info"><strong>JustMarkets</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>`;
 
 document.getElementById('dashCommunity').innerHTML = [
-  ['💬', 'WhatsApp'], ['✈️', 'Telegram'], ['🎮', 'Discord'], ['📘', 'Facebook'], ['📸', 'Instagram'], ['▶️', 'YouTube'],
-].map(([icon, name]) => `<a href="#" class="community-item"><span class="c-icon">${icon}</span>${name}</a>`).join('');
+  ['💬', 'WhatsApp', 'https://whatsapp.com/channel/0029VbBnrw82v1IqtqOh5N01'],
+  ['✈️', 'Telegram', 'https://telegram.me/+7_qfoZp1ilk5ODc0'],
+  ['📸', 'Instagram', 'https://www.instagram.com/vrcrypto_and_forex_trader?igsh=MTFleXd2d2ZmYXJkeA=='],
+  ['▶️', 'YouTube', 'https://youtube.com/@vrcommerce-ahmadhassanchou9469?si=QX6vaKO_LLebJ4so'],
+  ['🎵', 'TikTok', 'https://www.tiktok.com/@forexmoneymachine?_r=1&_t=ZS-981Gonde3h1'],
+].map(([icon, name, url]) => `<a href="${url}" class="community-item" target="_blank" rel="noopener"><span class="c-icon">${icon}</span>${name}</a>`).join('');
 
 async function loadTickets() {
   const tickets = await apiFetch('/tickets?mine=true');

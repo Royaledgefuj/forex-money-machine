@@ -92,10 +92,9 @@ async function main() {
   }
 
   const brokers = [
-    { name: 'XM Global', clicks: 4820, regs: 612, conv: '12.7%', commission: 4180, status: 'Active' },
     { name: 'Exness', clicks: 3910, regs: 498, conv: '12.7%', commission: 3220, status: 'Active' },
-    { name: 'FTMO', clicks: 6210, regs: 743, conv: '11.9%', commission: 9940, status: 'Active' },
-    { name: 'IC Markets', clicks: 1240, regs: 0, conv: '0%', commission: 0, status: 'Paused' },
+    { name: 'PU Prime', clicks: 4820, regs: 612, conv: '12.7%', commission: 4180, status: 'Active' },
+    { name: 'JustMarkets', clicks: 6210, regs: 743, conv: '11.9%', commission: 9940, status: 'Active' },
   ];
   if ((await prisma.broker.count()) === 0) {
     await prisma.broker.createMany({ data: brokers });
