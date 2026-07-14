@@ -267,7 +267,8 @@ async function loadBrokers() {
   BROKERS = await apiFetch('/brokers');
   document.getElementById('brokerRows').innerHTML = BROKERS.map((b) => `
     <tr><td><strong>${b.name}</strong></td><td>${b.clicks.toLocaleString()}</td><td>${b.regs.toLocaleString()}</td><td>${b.conv}</td><td>${fmtMoney(b.commission)}</td>
-    <td><span class="badge-pill ${b.status === 'Active' ? 'pill-success' : 'pill-muted'}">${b.status}</span></td></tr>`).join('');
+    <td><span class="badge-pill ${b.status === 'Active' ? 'pill-success' : 'pill-muted'}">${b.status}</span></td>
+    <td><button class="icon-btn danger" title="Remove" data-id="${b.id}">🗑</button></td></tr>`).join('');
 
   const summary = await apiFetch('/brokers/summary');
   document.getElementById('brokerSummaryStats').innerHTML = `
@@ -277,6 +278,20 @@ async function loadBrokers() {
     <div class="stat-card"><span class="num">${summary.activeBrokers}/${summary.totalBrokers}</span><span class="label">Active Partners</span></div>`;
   return summary;
 }
+document.getElementById('brokerRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const broker = BROKERS.find((b) => b.id === Number(btn.dataset.id));
+  if (!confirm(`Remove broker partner "${broker.name}"?`)) return;
+  await apiFetch(`/brokers/${broker.id}`, { method: 'DELETE' });
+  await Promise.all([loadBrokers(), loadActivity(), refreshRevenue()]);
+});
+document.getElementById('newBrokerBtn').addEventListener('click', async () => {
+  const name = prompt('New broker name:');
+  if (!name) return;
+  await apiFetch('/brokers', { method: 'POST', body: JSON.stringify({ name, status: 'Active' }) });
+  await Promise.all([loadBrokers(), loadActivity()]);
+});
 
 // ================= REVENUE (connects Payments + Broker commissions) =================
 async function refreshRevenue() {
