@@ -26,6 +26,7 @@
       <button class="dash-nav-item" data-panel="courses"><span class="ic">🎓</span>Courses</button>
       <button class="dash-nav-item" data-panel="live"><span class="ic">🔴</span>Live Classes</button>
       <button class="dash-nav-item" data-panel="downloads"><span class="ic">⬇️</span>Downloads &amp; Tools</button>
+      <button class="dash-nav-item" data-panel="certificates"><span class="ic">📜</span>Certificates</button>
       <button class="dash-nav-item" data-panel="announcements"><span class="ic">📣</span>Announcements</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments</button>
       <button class="dash-nav-item" data-panel="paymentMethods"><span class="ic">🏦</span>Payment Methods</button>
@@ -212,6 +213,33 @@
         </div>
       </section>
 
+      <!-- CERTIFICATES -->
+      <section class="dash-panel" data-panel="certificates">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="card-head"><h3>Issued Certificates</h3></div>
+            <div class="table-wrap">
+              <table class="dash-table">
+                <thead><tr><th>Student</th><th>Program</th><th>Batch</th><th>Completion Date</th><th>Certificate No.</th><th>Actions</th></tr></thead>
+                <tbody id="certificateRows"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Issue New Certificate</h3></div>
+            <form class="form-grid" id="certificateForm">
+              <div class="form-field full"><label>Student</label>
+                <select id="certStudent" required></select>
+              </div>
+              <div class="form-field full"><label>Program Name</label><input type="text" id="certProgram" value="All-Access Trading Program" required></div>
+              <div class="form-field"><label>Batch Name</label><input type="text" id="certBatch" placeholder="e.g. August 2026" required></div>
+              <div class="form-field"><label>Completion Date</label><input type="date" id="certDate" required></div>
+              <div class="form-field full"><button type="submit" class="btn btn-gold" id="certSubmitBtn">Issue Certificate</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <!-- ANNOUNCEMENTS -->
       <section class="dash-panel" data-panel="announcements">
         <div class="panel-grid">
@@ -341,6 +369,6 @@
 </div>
 
 <script src="js/auth.js?v=2"></script>
-<script src="js/dashboard-admin.js?v=6"></script>
+<script src="js/dashboard-admin.js?v=7"></script>
 </body>
 </html>

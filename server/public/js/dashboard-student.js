@@ -119,18 +119,17 @@ document.getElementById('overviewLeaderboard').innerHTML = LEADERBOARD.map((l, i
   <div class="list-item"><span class="list-dot" style="${l.self ? 'background:var(--up)' : ''}"></span>
   <div><strong>#${i + 1} ${l.name}${l.self ? ' (You)' : ''}</strong><span>${l.points.toLocaleString()} XP</span></div></div>`).join('');
 
-const CERTIFICATES = [
-  { course: 'Beginner Forex Course', id: 'FMM-2026-00842', earned: true },
-  { course: 'Trading Psychology', id: 'FMM-2026-00913', earned: true },
-  { course: 'Smart Money Concepts', progress: 68, earned: false },
-  { course: 'Gold (XAUUSD) Trading', progress: 35, earned: false },
-];
-document.getElementById('certList').innerHTML = CERTIFICATES.map((c) => `
-  <div class="download-tile">
-    <div class="dt-top"><h4>${c.course}</h4><span class="badge-pill ${c.earned ? 'pill-success' : 'pill-muted'}">${c.earned ? 'Earned' : 'Locked'}</span></div>
-    <p class="meta">${c.earned ? 'Certificate No. ' + c.id : `${c.progress}% complete — finish course to unlock`}</p>
-    ${c.earned ? '<a href="#" class="btn btn-outline btn-sm">Download PDF</a>' : '<button class="btn btn-outline btn-sm" disabled>Locked</button>'}
-  </div>`).join('');
+async function loadCertificates() {
+  const certificates = await apiFetch('/certificates/mine');
+  document.getElementById('certList').innerHTML = certificates.length ? certificates.map((c) => `
+    <div class="download-tile">
+      <div class="dt-top"><h4>${c.programName}</h4><span class="badge-pill pill-success">Earned</span></div>
+      <p class="meta">Batch: ${c.batchName} · Certificate No. ${c.certificateNumber}</p>
+      <a href="${API_BASE}/certificates/${c.id}/download?token=${session.token}" target="_blank" class="btn btn-outline btn-sm">Download PDF</a>
+    </div>`).join('')
+    : '<p class="empty-note">No certificates yet — they\'re issued once you complete a program batch.</p>';
+}
+loadCertificates();
 
 // The 3 free tools are static pages (no login required, no tier gating);
 // everything else is admin-uploaded via /api/resources and tier-gated.

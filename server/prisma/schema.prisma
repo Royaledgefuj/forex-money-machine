@@ -21,6 +21,7 @@ model User {
   payments       Payment[]
   enrollments    Enrollment[]
   signalProofs   SignalProof[]
+  certificates   Certificate[]
 }
 
 model Course {
@@ -122,6 +123,18 @@ model Resource {
   filePath   String
   size       String
   uploadedAt DateTime @default(now())
+}
+
+model Certificate {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentName       String
+  programName       String
+  batchName         String
+  completionDate    String
+  certificateNumber String   @unique
+  issuedAt          DateTime @default(now())
 }
 
 model Broker {

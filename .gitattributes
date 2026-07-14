@@ -8,3 +8,7 @@
 *.zip -text -diff binary
 *.ex4 -text -diff binary
 *.ex5 -text -diff binary
+*.ttf -text -diff binary
+*.otf -text -diff binary
+*.woff -text -diff binary
+*.woff2 -text -diff binary

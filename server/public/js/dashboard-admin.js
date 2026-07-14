@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  downloads: 'Downloads & Tools', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals',
+  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals',
   brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
@@ -284,6 +284,56 @@ document.getElementById('resourceForm').addEventListener('submit', async (e) => 
   }
 });
 
+// ================= CERTIFICATES =================
+let CERTIFICATES = [];
+async function loadCertificates() {
+  const [certs, students] = await Promise.all([apiFetch('/certificates'), apiFetch('/students')]);
+  CERTIFICATES = certs;
+
+  document.getElementById('certStudent').innerHTML = students.map((s) => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+
+  document.getElementById('certificateRows').innerHTML = CERTIFICATES.length ? CERTIFICATES.map((c) => `
+    <tr><td>${c.user.name}</td><td>${c.programName}</td><td>${c.batchName}</td><td>${c.completionDate}</td><td>${c.certificateNumber}</td>
+      <td><div class="row-actions">
+        <a class="btn btn-outline btn-sm" href="${API_BASE}/certificates/${c.id}/download?token=${session.token}" target="_blank">View</a>
+        <button class="icon-btn danger" title="Revoke" data-id="${c.id}">🗑</button>
+      </div></td></tr>`).join('')
+    : '<tr><td colspan="6"><p class="empty-note">No certificates issued yet.</p></td></tr>';
+}
+document.getElementById('certificateRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const cert = CERTIFICATES.find((c) => c.id === Number(btn.dataset.id));
+  if (!confirm(`Revoke certificate ${cert.certificateNumber} for ${cert.user.name}?`)) return;
+  await apiFetch(`/certificates/${cert.id}`, { method: 'DELETE' });
+  await Promise.all([loadCertificates(), loadActivity()]);
+});
+document.getElementById('certificateForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const submitBtn = document.getElementById('certSubmitBtn');
+  submitBtn.disabled = true;
+  try {
+    const dateVal = document.getElementById('certDate').value;
+    const formattedDate = new Date(dateVal + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    await apiFetch('/certificates', {
+      method: 'POST',
+      body: JSON.stringify({
+        userId: document.getElementById('certStudent').value,
+        programName: document.getElementById('certProgram').value,
+        batchName: document.getElementById('certBatch').value,
+        completionDate: formattedDate,
+      }),
+    });
+    await Promise.all([loadCertificates(), loadActivity()]);
+    document.getElementById('certBatch').value = '';
+    document.getElementById('certDate').value = '';
+  } catch (err) {
+    alert('Could not issue certificate: ' + err.message);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
 // ================= ANNOUNCEMENTS =================
 async function loadAnnouncements() {
   const announcements = await apiFetch('/announcements');
@@ -522,7 +572,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
