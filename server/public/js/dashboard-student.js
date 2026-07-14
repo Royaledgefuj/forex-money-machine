@@ -18,8 +18,8 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Overview', courses: 'My Courses', live: 'Live Classes', certificates: 'Certificates',
-  downloads: 'Downloads & Tools', payments: 'Payments & Brokers', community: 'Community',
-  support: 'Support', profile: 'Profile & Security',
+  downloads: 'Downloads & Tools', payments: 'Payments & Brokers', membership: 'Membership',
+  community: 'Community', support: 'Support', profile: 'Profile & Security',
 };
 
 function showPanel(key) {
@@ -109,19 +109,103 @@ document.getElementById('certList').innerHTML = CERTIFICATES.map((c) => `
   </div>`).join('');
 
 const DOWNLOADS = [
-  { name: 'ICT Order Block Indicator', type: 'TradingView', version: 'v3.2', size: '48 KB' },
-  { name: 'SMC Liquidity EA', type: 'MT4 Expert Advisor', version: 'v1.8', size: '112 KB' },
-  { name: 'Gold Scalper Template', type: 'MT5 Template', version: 'v2.0', size: '20 KB' },
-  { name: 'Risk & Lot Size Calculator', type: 'Excel Sheet', version: 'v4.1', size: '85 KB' },
-  { name: 'Trading Journal Template', type: 'Excel Sheet', version: 'v2.3', size: '64 KB' },
-  { name: 'Funded Account Rules Guide', type: 'PDF Guide', version: 'v1.0', size: '1.2 MB' },
+  { name: 'TradingView Indicators', type: 'TradingView', version: 'v3.2', size: '48 KB', tier: 'Silver' },
+  { name: 'MT4 Indicators', type: 'MT4 Indicator Pack', version: 'v3.2', size: '64 KB', tier: 'Silver' },
+  { name: 'MT5 Indicators', type: 'MT5 Indicator Pack', version: 'v3.2', size: '64 KB', tier: 'Silver' },
+  { name: 'Chart Templates', type: 'MT4/MT5 Template', version: 'v2.0', size: '20 KB', tier: 'Silver' },
+  { name: 'Trading Journal', type: 'Excel Sheet', version: 'v2.3', size: '64 KB', tier: 'Gold' },
+  { name: 'Excel Sheets', type: 'Trading Toolkit', version: 'v4.1', size: '85 KB', tier: 'Gold' },
+  { name: 'Expert Advisors', type: 'MT4/MT5 EA', version: 'v1.8', size: '112 KB', tier: 'Platinum' },
+  { name: 'PDF Guides', type: 'PDF Guide', version: 'v1.0', size: '1.2 MB', tier: 'Free' },
+  { name: 'Risk Calculator', type: 'Excel Sheet', version: 'v1.4', size: '32 KB', tier: 'Free' },
+  { name: 'Lot Size Calculator', type: 'Excel Sheet', version: 'v1.2', size: '28 KB', tier: 'Free' },
 ];
-document.getElementById('downloadList').innerHTML = DOWNLOADS.map((d) => `
-  <div class="download-tile">
-    <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill pill-warn">${d.version}</span></div>
-    <p class="meta">${d.type} · ${d.size}</p>
-    <a href="#" class="btn btn-gold btn-sm">Download</a>
-  </div>`).join('');
+function renderDownloads() {
+  const myTier = (session && session.membershipTier) || 'Free';
+  document.getElementById('downloadList').innerHTML = DOWNLOADS.map((d) => {
+    const unlocked = tierRank(myTier) >= tierRank(d.tier);
+    return `
+    <div class="download-tile">
+      <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill ${d.tier === 'Free' ? 'pill-success' : 'pill-warn'}">${d.tier}</span></div>
+      <p class="meta">${d.type} · ${d.size} · ${d.version}</p>
+      ${unlocked
+        ? `<a href="#" class="btn btn-gold btn-sm">Download</a>`
+        : `<button class="btn btn-outline btn-sm" data-upgrade-tier="${d.tier}">🔒 Requires ${d.tier}</button>`}
+    </div>`;
+  }).join('');
+}
+renderDownloads();
+document.getElementById('downloadList').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-upgrade-tier]');
+  if (!btn) return;
+  showPanel('membership');
+});
+
+// ================= MEMBERSHIP =================
+const PLAN_FEATURES = {
+  Silver: ['Indicators (TradingView, MT4, MT5)', 'Chart templates', 'Course access & live classes (already included)'],
+  Gold: ['Everything in Silver', 'Trading Journal', 'Excel toolkit sheets'],
+  Platinum: ['Everything in Gold', 'Expert Advisors', 'All future new indicators & strategies', 'Lifetime access — one-time payment'],
+};
+let pendingMembershipRequests = [];
+
+function renderMembership() {
+  const myTier = (session && session.membershipTier) || 'Free';
+  document.getElementById('currentTierLabel').textContent = myTier;
+
+  const pending = pendingMembershipRequests[0];
+  document.getElementById('pendingRequestNote').innerHTML = pending
+    ? `<div class="card"><p class="mini-note">⏳ Your request for <strong>${pending.course}</strong> is pending admin approval.</p></div>`
+    : '';
+
+  document.getElementById('membershipPlans').innerHTML = ['Silver', 'Gold', 'Platinum'].map((tier) => {
+    const price = MEMBERSHIP_TIERS[tier].price;
+    const already = tierRank(myTier) >= tierRank(tier);
+    const hasPending = pendingMembershipRequests.some((p) => p.course === `${tier} Membership`);
+    let action;
+    if (already) action = '<button class="btn btn-outline btn-sm" disabled>Current Plan</button>';
+    else if (hasPending) action = '<button class="btn btn-outline btn-sm" disabled>Request Pending</button>';
+    else action = `<button class="btn btn-gold btn-sm" data-request-tier="${tier}">Request Upgrade</button>`;
+
+    return `
+    <div class="download-tile">
+      <div class="dt-top"><h4>${tier}</h4><span class="badge-pill pill-warn">$${price}${tier === 'Platinum' ? ' lifetime' : ''}</span></div>
+      <p class="meta">${PLAN_FEATURES[tier].join(' · ')}</p>
+      ${action}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('membershipPlans').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-request-tier]');
+  if (!btn) return;
+  btn.disabled = true;
+  try {
+    await apiFetch('/membership/request', { method: 'POST', body: JSON.stringify({ tier: btn.dataset.requestTier }) });
+    await loadPendingMembershipRequests();
+    renderMembership();
+    alert(`Upgrade request sent! An admin will review and approve your ${btn.dataset.requestTier} membership shortly.`);
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+  }
+});
+
+async function loadPendingMembershipRequests() {
+  const all = await apiFetch('/payments');
+  pendingMembershipRequests = all.filter((p) => p.student === session.name && p.status === 'Pending' && p.course.endsWith(' Membership'));
+}
+
+async function refreshMembershipTier() {
+  const me = await apiFetch('/auth/me');
+  session.membershipTier = me.membershipTier;
+  const stored = Auth.getSession();
+  if (stored) { stored.membershipTier = me.membershipTier; localStorage.setItem('fmm_session', JSON.stringify(stored)); }
+  await loadPendingMembershipRequests();
+  renderDownloads();
+  renderMembership();
+}
+refreshMembershipTier();
 
 async function loadPayments() {
   const all = await apiFetch('/payments');

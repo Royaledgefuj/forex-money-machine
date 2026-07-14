@@ -6,6 +6,16 @@ const API_BASE = (location.hostname === 'localhost' || location.hostname === '12
 const MEDIA_BASE = API_BASE.replace(/\/api$/, '');
 const AUTH_KEY = 'fmm_session';
 
+const MEMBERSHIP_TIERS = {
+  Free: { rank: 0, price: 0 },
+  Silver: { rank: 1, price: 150 },
+  Gold: { rank: 2, price: 250 },
+  Platinum: { rank: 3, price: 350 },
+};
+function tierRank(tier) {
+  return MEMBERSHIP_TIERS[tier] ? MEMBERSHIP_TIERS[tier].rank : 0;
+}
+
 const Auth = {
   async login(email, password) {
     const res = await fetch(`${API_BASE}/auth/login`, {

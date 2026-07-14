@@ -19,6 +19,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/brokers', require('./routes/brokers'));
 app.use('/api/tickets', require('./routes/tickets'));
 app.use('/api/activity', require('./routes/activity'));
+app.use('/api/membership', require('./routes/membership'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

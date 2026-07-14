@@ -26,6 +26,7 @@
       <button class="dash-nav-item" data-panel="live"><span class="ic">🔴</span>Live Classes</button>
       <button class="dash-nav-item" data-panel="certificates"><span class="ic">📜</span>Certificates</button>
       <button class="dash-nav-item" data-panel="downloads"><span class="ic">⬇️</span>Downloads &amp; Tools</button>
+      <button class="dash-nav-item" data-panel="membership"><span class="ic">💎</span>Membership</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments &amp; Brokers</button>
       <button class="dash-nav-item" data-panel="community"><span class="ic">👥</span>Community</button>
       <button class="dash-nav-item" data-panel="support"><span class="ic">🎧</span>Support</button>
@@ -162,6 +163,18 @@
           <div class="card-head"><h3>Indicators, Tools &amp; Guides</h3><span class="mini-note">Access included with your membership</span></div>
           <div class="tile-grid" id="downloadList"></div>
         </div>
+      </section>
+
+      <!-- MEMBERSHIP -->
+      <section class="dash-panel" data-panel="membership">
+        <div class="dash-welcome">
+          <div>
+            <h2>Your Plan: <span id="currentTierLabel" class="text-gold">Free</span></h2>
+            <p>Upgrade to unlock more indicators, EAs and trading tools in your Downloads &amp; Tools tab.</p>
+          </div>
+        </div>
+        <div id="pendingRequestNote"></div>
+        <div class="tile-grid" id="membershipPlans" style="grid-template-columns:repeat(3,1fr);"></div>
       </section>
 
       <!-- PAYMENTS -->

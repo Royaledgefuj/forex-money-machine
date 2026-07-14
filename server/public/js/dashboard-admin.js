@@ -52,15 +52,18 @@ function statusPill(status) {
 async function loadStudents(filter = '') {
   const students = await apiFetch('/students');
   const rows = students.filter((s) => s.name.toLowerCase().includes(filter.toLowerCase()) || s.email.toLowerCase().includes(filter.toLowerCase()));
+  const tierPillClass = { Free: 'pill-muted', Silver: 'pill-muted', Gold: 'pill-warn', Platinum: 'pill-success' };
   document.getElementById('studentRows').innerHTML = rows.map((s) => `
     <tr>
       <td><div class="table-user"><div class="avatar">${initials(s.name)}</div><div><strong>${s.name}</strong><br><span class="mini-note">${s.email}</span></div></div></td>
       <td>${s.coursesCount}</td>
       <td>${new Date(s.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</td>
       <td>${statusPill(s.status)}</td>
+      <td><span class="badge-pill ${tierPillClass[s.membershipTier] || 'pill-muted'}">${s.membershipTier || 'Free'}</span></td>
       <td><div class="row-actions">
         ${s.status !== 'Active' ? `<button class="icon-btn" title="Approve / Activate" data-action="approve" data-id="${s.id}">✔</button>` : ''}
         ${s.status !== 'Suspended' ? `<button class="icon-btn" title="Suspend" data-action="suspend" data-id="${s.id}">⏸</button>` : ''}
+        <button class="icon-btn" title="Set Membership Tier" data-action="tier" data-id="${s.id}">💎</button>
         <button class="icon-btn danger" title="Delete" data-action="delete" data-id="${s.id}">🗑</button>
       </div></td>
     </tr>`).join('');
@@ -73,6 +76,12 @@ document.getElementById('studentRows').addEventListener('click', async (e) => {
   const { action, id } = btn.dataset;
   if (action === 'approve') await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'Active' }) });
   if (action === 'suspend') await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'Suspended' }) });
+  if (action === 'tier') {
+    const tier = prompt('Set membership tier (Free, Silver, Gold, Platinum):');
+    if (!tier) return;
+    if (!['Free', 'Silver', 'Gold', 'Platinum'].includes(tier)) return alert('Must be exactly: Free, Silver, Gold, or Platinum');
+    await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ membershipTier: tier }) });
+  }
   if (action === 'delete') {
     if (!confirm('Delete this student? This cannot be undone.')) return;
     await apiFetch(`/students/${id}`, { method: 'DELETE' });
