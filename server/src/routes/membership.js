@@ -3,6 +3,7 @@ const prisma = require('../prisma');
 const { requireAuth } = require('../middleware/auth');
 const { TIERS } = require('../membership');
 const { logActivity } = require('../activity');
+const { notifyAdmin } = require('../email');
 
 const router = express.Router();
 
@@ -36,6 +37,12 @@ router.post('/request', requireAuth, async (req, res) => {
     },
   });
   await logActivity(`${req.user.name} requested ${tier} membership`);
+  notifyAdmin(
+    `New payment proof: ${tier} Membership`,
+    `<p><strong>${req.user.name}</strong> submitted proof of payment for <strong>${tier} Membership</strong> (${payment.amount}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+     <p><a href="https://www.vrcommercesolutions.com${proofUrl}">View proof screenshot</a></p>
+     <p>Review and approve in the admin dashboard's Payments tab.</p>`,
+  );
   res.status(201).json(payment);
 });
 

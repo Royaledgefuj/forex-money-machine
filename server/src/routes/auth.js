@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
 const { requireAuth } = require('../middleware/auth');
+const { notifyAdmin } = require('../email');
 
 const router = express.Router();
 
@@ -35,6 +36,11 @@ router.post('/register', async (req, res) => {
   const user = await prisma.user.create({
     data: { email: email.trim().toLowerCase(), passwordHash, name, role: 'student', status: 'Active' },
   });
+
+  notifyAdmin(
+    'New student registration',
+    `<p><strong>${user.name}</strong> (${user.email}) just created an account.</p>`,
+  );
 
   const token = signToken(user);
   res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier } });

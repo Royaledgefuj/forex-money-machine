@@ -6,6 +6,7 @@ const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
 const { enrollAllMembersInCourse } = require('../enrollment');
+const { notifyAdmin } = require('../email');
 
 const router = express.Router();
 
@@ -99,6 +100,12 @@ router.post('/:id/purchase-request', requireAuth, async (req, res) => {
     },
   });
   await logActivity(`${req.user.name} requested access to "${course.name}"`);
+  notifyAdmin(
+    `New payment proof: ${course.name}`,
+    `<p><strong>${req.user.name}</strong> submitted proof of payment for <strong>${course.name}</strong> (${course.price}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+     <p><a href="https://www.vrcommercesolutions.com${proofUrl}">View proof screenshot</a></p>
+     <p>Review and approve in the admin dashboard's Payments tab.</p>`,
+  );
   res.status(201).json(payment);
 });
 
