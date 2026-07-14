@@ -17,8 +17,10 @@ model User {
   membershipTier String       @default("Free") // Free | Silver | Gold | Platinum
   coursesCount   Int          @default(0)
   joinedAt       DateTime     @default(now())
+  signalsAccess  Boolean      @default(false)
   payments       Payment[]
   enrollments    Enrollment[]
+  signalProofs   SignalProof[]
 }
 
 model Course {
@@ -97,6 +99,17 @@ model PaymentMethod {
   active       Boolean  @default(true)
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
+}
+
+model SignalProof {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  broker      String
+  amount      String
+  proofUrl    String
+  status      String   @default("Pending") // Pending | Approved | Rejected
+  submittedAt DateTime @default(now())
 }
 
 model Broker {

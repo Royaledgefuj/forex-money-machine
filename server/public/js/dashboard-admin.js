@@ -14,7 +14,8 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
+  announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals',
+  brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
   navItems.forEach((n) => n.classList.toggle('active', n.dataset.panel === key));
@@ -342,6 +343,30 @@ pmForm.addEventListener('submit', async (e) => {
   await Promise.all([loadPaymentMethods(), loadActivity()]);
 });
 
+// ================= SIGNALS =================
+let SIGNAL_PROOFS = [];
+async function loadSignals() {
+  SIGNAL_PROOFS = await apiFetch('/signals');
+  const map = { Approved: 'pill-success', Pending: 'pill-warn', Rejected: 'pill-danger' };
+  document.getElementById('signalRows').innerHTML = SIGNAL_PROOFS.length ? SIGNAL_PROOFS.map((s) => `
+    <tr><td>${s.user.name}</td><td>${s.broker}</td><td>${s.amount}</td>
+      <td><a href="${MEDIA_BASE}${s.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a></td>
+      <td><span class="badge-pill ${map[s.status]}">${s.status}</span></td>
+      <td>${s.status === 'Pending' ? `
+        <div class="row-actions">
+          <button class="icon-btn" title="Approve" data-action="approve" data-id="${s.id}">✔</button>
+          <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${s.id}">✕</button>
+        </div>` : '—'}</td></tr>`).join('')
+    : '<tr><td colspan="6"><p class="empty-note">No signals submissions yet.</p></td></tr>';
+}
+document.getElementById('signalRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const status = btn.dataset.action === 'approve' ? 'Approved' : 'Rejected';
+  await apiFetch(`/signals/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  await Promise.all([loadSignals(), loadActivity()]);
+});
+
 // ================= BROKERS =================
 let BROKERS = [];
 async function loadBrokers() {
@@ -444,7 +469,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

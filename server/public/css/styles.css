@@ -238,6 +238,13 @@ p{ margin:0 0 1em; color: var(--muted); }
 .status-closed{ background: rgba(226,85,79,0.15); color: #f0918c; }
 .broker-disclaimer{ text-align:center; font-size:.78rem; color: var(--muted-dim); max-width:640px; margin:0 auto; }
 
+.signals-banner{
+  margin-top:32px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+  background: var(--card-bg); border:1px solid rgba(212,175,55,0.35); border-radius: var(--radius); padding:26px 32px;
+}
+.signals-banner h3{ font-size:1.05rem; margin-bottom:6px; }
+.signals-banner p{ font-size:.86rem; color: var(--muted); max-width:560px; margin:0; }
+
 /* Tools */
 .tools-grid{ display:grid; grid-template-columns: repeat(5, 1fr); gap:18px; }
 .tool-item{

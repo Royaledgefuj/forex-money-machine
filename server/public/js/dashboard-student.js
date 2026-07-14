@@ -18,7 +18,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Overview', courses: 'My Courses', live: 'Live Classes', certificates: 'Certificates',
-  downloads: 'Downloads & Tools', payments: 'Payments & Brokers', membership: 'Membership',
+  downloads: 'Downloads & Tools', payments: 'Payments & Brokers', membership: 'Membership', signals: 'Signals',
   community: 'Community', support: 'Support', profile: 'Profile & Security',
 };
 
@@ -309,6 +309,72 @@ async function loadPayments() {
     : '<tr><td colspan="6"><p class="empty-note">No payments yet.</p></td></tr>';
 }
 loadPayments();
+
+// ================= SIGNALS =================
+const BROKER_OPTIONS = ['Exness', 'PU Prime', 'JustMarkets'];
+
+function renderSignalsForm() {
+  return `
+    <p class="mini-note" style="margin-bottom:16px;">Deposit $300 or more with any one of our partner brokers, then upload your proof below. Once verified, we'll unlock our private signals group for you.</p>
+    <form id="signalsForm" class="form-grid">
+      <div class="form-field"><label>Broker</label>
+        <select id="sigBroker" required>${BROKER_OPTIONS.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
+      </div>
+      <div class="form-field"><label>Deposit Amount (USD)</label><input type="number" id="sigAmount" min="300" step="1" placeholder="300" required></div>
+      <div class="form-field full"><label>Upload Deposit Proof</label><input type="file" id="sigProof" accept="image/*" required></div>
+      <p class="modal-error" id="sigError" hidden></p>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="sigSubmitBtn">Submit for Review</button></div>
+    </form>`;
+}
+
+async function loadSignals() {
+  const data = await apiFetch('/signals/mine');
+  const el = document.getElementById('signalsContent');
+
+  if (data.signalsAccess) {
+    el.innerHTML = `
+      <p class="mini-note" style="margin-bottom:16px;">✅ Verified — you're in! Tap below to join the private signals group.</p>
+      <a href="${data.channelUrl}" target="_blank" rel="noopener" class="btn btn-gold">Join Signals Group</a>`;
+    return;
+  }
+
+  if (data.latest && data.latest.status === 'Pending') {
+    el.innerHTML = `<p class="mini-note">⏳ Your ${data.latest.amount} deposit proof (${data.latest.broker}) is pending review. We'll unlock the signals group as soon as it's verified.</p>`;
+    return;
+  }
+
+  el.innerHTML = renderSignalsForm();
+  if (data.latest && data.latest.status === 'Rejected') {
+    document.getElementById('signalsContent').insertAdjacentHTML('afterbegin', '<p class="modal-error" style="margin-bottom:16px;">Your last submission couldn\'t be verified. Please double-check the deposit and try again.</p>');
+  }
+
+  document.getElementById('signalsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('sigProof');
+    const file = fileInput.files[0];
+    if (!file) return;
+    const submitBtn = document.getElementById('sigSubmitBtn');
+    const errorEl = document.getElementById('sigError');
+    submitBtn.disabled = true;
+    errorEl.hidden = true;
+    try {
+      const proofData = new FormData();
+      proofData.append('proof', file);
+      const { url: proofUrl } = await apiFetch('/signals/upload-proof', { method: 'POST', body: proofData });
+      await apiFetch('/signals/submit', {
+        method: 'POST',
+        body: JSON.stringify({ broker: document.getElementById('sigBroker').value, amount: document.getElementById('sigAmount').value, proofUrl }),
+      });
+      await loadSignals();
+      alert('Proof submitted! We\'ll review it and unlock the signals group shortly.');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      submitBtn.disabled = false;
+    }
+  });
+}
+loadSignals();
 
 document.getElementById('brokerAccounts').innerHTML = `
   <div class="course-row"><div class="thumb">EX</div><div class="course-row-info"><strong>Exness</strong><span class="progress-pct">Account #88213 · Linked Jun 2026</span></div><span class="badge-pill pill-success">Verified</span></div>
