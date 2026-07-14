@@ -86,6 +86,17 @@ model Payment {
   user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   courseId Int?
   courseRef Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  proofUrl  String?
+  reference String?
+}
+
+model PaymentMethod {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  instructions String
+  active       Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
 }
 
 model Broker {

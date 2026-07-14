@@ -109,6 +109,17 @@ async function main() {
     await prisma.ticket.createMany({ data: tickets });
   }
 
+  const paymentMethods = [
+    { name: 'USDT (TRC20)', instructions: 'Send the exact amount to wallet address: [ADD YOUR USDT TRC20 WALLET ADDRESS HERE]. Upload a screenshot of the completed transaction.', sortOrder: 1 },
+    { name: 'Ziina', instructions: 'Send payment via Ziina to: [ADD YOUR ZIINA PAYMENT LINK OR NUMBER HERE]. Upload a screenshot of the payment confirmation.', sortOrder: 2 },
+    { name: 'Bank Transfer', instructions: 'Transfer to: [ADD YOUR BANK NAME, ACCOUNT NUMBER, IBAN HERE]. Upload a screenshot or photo of the transfer receipt.', sortOrder: 3 },
+    { name: 'BTC', instructions: 'Send the exact amount to wallet address: [ADD YOUR BTC WALLET ADDRESS HERE]. Upload a screenshot of the completed transaction.', sortOrder: 4 },
+  ];
+  for (const m of paymentMethods) {
+    const existing = await prisma.paymentMethod.findFirst({ where: { name: m.name } });
+    if (!existing) await prisma.paymentMethod.create({ data: m });
+  }
+
   if ((await prisma.activityLog.count()) === 0) {
     await prisma.activityLog.createMany({
       data: [

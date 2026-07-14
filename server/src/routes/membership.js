@@ -11,8 +11,12 @@ router.get('/plans', requireAuth, (req, res) => {
 });
 
 router.post('/request', requireAuth, async (req, res) => {
-  const { tier } = req.body;
+  const { tier, method, proofUrl, reference } = req.body;
   if (!['Silver', 'Gold', 'Platinum'].includes(tier)) return res.status(400).json({ error: 'Invalid membership tier' });
+  if (!method || !proofUrl) return res.status(400).json({ error: 'Payment method and proof of payment are required' });
+
+  const paymentMethod = await prisma.paymentMethod.findFirst({ where: { name: method, active: true } });
+  if (!paymentMethod) return res.status(400).json({ error: 'Invalid payment method' });
 
   const existingPending = await prisma.payment.findFirst({
     where: { userId: req.user.id, course: `${tier} Membership`, status: 'Pending' },
@@ -24,7 +28,9 @@ router.post('/request', requireAuth, async (req, res) => {
       userId: req.user.id,
       student: req.user.name,
       course: `${tier} Membership`,
-      method: 'Manual',
+      method,
+      proofUrl,
+      reference: reference || null,
       amount: `$${TIERS[tier].price.toFixed(2)}`,
       status: 'Pending',
     },

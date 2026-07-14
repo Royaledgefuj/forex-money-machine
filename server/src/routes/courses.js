@@ -77,8 +77,14 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 // ---- Individual course purchase (alternative to membership) ----
 router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
+  const { method, proofUrl, reference } = req.body;
+  if (!method || !proofUrl) return res.status(400).json({ error: 'Payment method and proof of payment are required' });
+
   const course = await prisma.course.findUnique({ where: { id } });
   if (!course || course.status !== 'Published') return res.status(404).json({ error: 'Course not found' });
+
+  const paymentMethod = await prisma.paymentMethod.findFirst({ where: { name: method, active: true } });
+  if (!paymentMethod) return res.status(400).json({ error: 'Invalid payment method' });
 
   const existingAccess = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: req.user.id, courseId: id } } });
   if (existingAccess) return res.status(409).json({ error: 'You already have access to this course' });
@@ -89,7 +95,7 @@ router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const payment = await prisma.payment.create({
     data: {
       userId: req.user.id, courseId: id, student: req.user.name, course: course.name,
-      method: 'Manual', amount: course.price, status: 'Pending',
+      method, proofUrl, reference: reference || null, amount: course.price, status: 'Pending',
     },
   });
   await logActivity(`${req.user.name} requested access to "${course.name}"`);
