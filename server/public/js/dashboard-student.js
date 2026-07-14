@@ -1,5 +1,5 @@
-// Student Dashboard — Payments & Support Tickets are backed by the real API;
-// course progress/certificates/leaderboard/downloads have no backing model yet, so they stay illustrative.
+// Student Dashboard — Payments, Support Tickets, Courses (Enrollment), Live Classes, and Membership
+// are backed by the real API; certificates/leaderboard have no backing model yet, so they stay illustrative.
 
 const session = Auth.requireRole('student');
 
@@ -39,46 +39,65 @@ document.getElementById('logoutBtn').addEventListener('click', (e) => {
   window.location.href = 'index.html';
 });
 
-// ---- Mock data ----
-const COURSES = [
-  { name: 'Smart Money Concepts', progress: 68, status: 'in-progress' },
-  { name: 'Beginner Forex Course', progress: 100, status: 'complete' },
-  { name: 'Gold (XAUUSD) Trading', progress: 35, status: 'in-progress' },
-  { name: 'Trading Psychology', progress: 100, status: 'complete' },
-];
-const RECOMMENDED = ['ICT Masterclass', 'Funded Account Program', 'Scalping Masterclass'];
-
+// ---- Real course access (via membership all-access pass or individual purchase) ----
 function courseRow(c) {
   return `<div class="course-row">
     <div class="thumb">${c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
     <div class="course-row-info">
       <strong>${c.name}</strong>
       <div class="progress-bar"><span style="width:${c.progress}%"></span></div>
-      <span class="progress-pct">${c.progress}% complete</span>
+      <span class="progress-pct">${c.progress}% complete ${c.source === 'membership' ? '· via membership' : ''}</span>
     </div>
-    <a href="#" class="btn btn-outline btn-sm">${c.progress === 100 ? 'Review' : 'Resume'}</a>
+    <a href="#" class="btn btn-outline btn-sm">${c.completed ? 'Review' : 'Resume'}</a>
   </div>`;
 }
 
-document.getElementById('overviewCourses').innerHTML = COURSES.filter((c) => c.status === 'in-progress').map(courseRow).join('');
-document.getElementById('courseList').innerHTML = COURSES.map(courseRow).join('');
-document.getElementById('courseRecommended').innerHTML = RECOMMENDED.map((name) => `
-  <div class="course-row">
-    <div class="thumb">${name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
-    <div class="course-row-info"><strong>${name}</strong><span class="progress-pct">Not enrolled yet</span></div>
-    <a href="index.html#courses" class="btn btn-gold btn-sm">Enroll</a>
-  </div>`).join('');
-
-const LIVE_CLASSES = [
-  { title: 'Weekly Gold (XAUUSD) Market Breakdown', time: 'Today, 8:00 PM GST', tag: 'Live' },
-  { title: 'ICT Kill Zones Workshop', time: 'Thu, Jul 11 · 7:00 PM GST', tag: 'Workshop' },
-  { title: 'Trading Psychology Q&A', time: 'Sat, Jul 13 · 6:00 PM GST', tag: 'Q&A' },
-];
-function liveRow(l) {
-  return `<div class="list-item"><span class="list-dot"></span><div><strong>${l.title}</strong><span>${l.time} · ${l.tag}</span></div></div>`;
+async function loadEnrollments() {
+  const data = await apiFetch('/enrollments/mine');
+  const inProgress = data.accessible.filter((c) => !c.completed);
+  document.getElementById('overviewCourses').innerHTML = inProgress.length
+    ? inProgress.slice(0, 3).map(courseRow).join('')
+    : '<p class="empty-note">No courses yet — check Membership or the course catalog to get started.</p>';
+  document.getElementById('courseList').innerHTML = data.accessible.length
+    ? data.accessible.map(courseRow).join('')
+    : '<p class="empty-note">No courses yet. Upgrade your membership or purchase a course to get started.</p>';
+  document.getElementById('courseRecommended').innerHTML = data.notAccessible.length
+    ? data.notAccessible.map((c) => `
+    <div class="course-row">
+      <div class="thumb">${c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
+      <div class="course-row-info"><strong>${c.name}</strong><span class="progress-pct">${c.price} · or included with Silver+ membership</span></div>
+      <a href="index.html#courses" class="btn btn-gold btn-sm">Enroll</a>
+    </div>`).join('')
+    : '<p class="empty-note">You have access to every course. 🎉</p>';
 }
-document.getElementById('overviewLive').innerHTML = LIVE_CLASSES.slice(0, 2).map(liveRow).join('');
-document.getElementById('liveSchedule').innerHTML = LIVE_CLASSES.map(liveRow).join('');
+loadEnrollments();
+
+// Any paid tier (Silver/Gold/Platinum) unlocks all live classes; Free members see them locked.
+function liveRow(l, unlocked) {
+  return `<div class="list-item"><span class="list-dot"></span><div><strong>${l.title}</strong><span>${l.when} · ${l.platform}</span></div>
+    ${unlocked
+      ? '<span class="badge-pill pill-success">Unlocked</span>'
+      : '<button class="btn btn-outline btn-sm" data-upgrade-tier="Silver">Members Only</button>'}
+  </div>`;
+}
+
+async function loadLiveClasses() {
+  const classes = await apiFetch('/live-classes');
+  const unlocked = tierRank(session.membershipTier || 'Free') >= tierRank('Silver');
+  document.getElementById('overviewLive').innerHTML = classes.length
+    ? classes.slice(0, 2).map((l) => liveRow(l, unlocked)).join('')
+    : '<p class="empty-note">No live classes scheduled right now.</p>';
+  document.getElementById('liveSchedule').innerHTML = classes.length
+    ? classes.map((l) => liveRow(l, unlocked)).join('')
+    : '<p class="empty-note">No live classes scheduled right now.</p>';
+}
+loadLiveClasses();
+['overviewLive', 'liveSchedule'].forEach((id) => {
+  document.getElementById(id).addEventListener('click', (e) => {
+    if (!e.target.closest('button[data-upgrade-tier]')) return;
+    showPanel('membership');
+  });
+});
 
 const ANNOUNCEMENTS = [
   { title: 'New Course: Funded Account Program 2.0', time: '2 days ago' },

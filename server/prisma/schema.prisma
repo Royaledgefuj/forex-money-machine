@@ -8,26 +8,43 @@ datasource db {
 }
 
 model User {
-  id             Int       @id @default(autoincrement())
-  email          String    @unique
+  id             Int          @id @default(autoincrement())
+  email          String       @unique
   passwordHash   String
   name           String
-  role           String    // "admin" | "student"
-  status         String    @default("Active") // Active | Pending | Suspended
-  membershipTier String    @default("Free") // Free | Silver | Gold | Platinum
-  coursesCount   Int       @default(0)
-  joinedAt       DateTime  @default(now())
+  role           String       // "admin" | "student"
+  status         String       @default("Active") // Active | Pending | Suspended
+  membershipTier String       @default("Free") // Free | Silver | Gold | Platinum
+  coursesCount   Int          @default(0)
+  joinedAt       DateTime     @default(now())
   payments       Payment[]
+  enrollments    Enrollment[]
 }
 
 model Course {
-  id       Int      @id @default(autoincrement())
-  name     String
-  category String
-  price    String
-  students Int      @default(0)
-  status   String   @default("Draft") // Published | Draft
-  lessons  Lesson[]
+  id          Int          @id @default(autoincrement())
+  name        String
+  category    String
+  price       String
+  students    Int          @default(0)
+  status      String       @default("Draft") // Published | Draft
+  lessons     Lesson[]
+  enrollments Enrollment[]
+  payments    Payment[]
+}
+
+model Enrollment {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   Int
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress   Int      @default(0)
+  completed  Boolean  @default(false)
+  source     String   // "membership" | "purchase"
+  enrolledAt DateTime @default(now())
+
+  @@unique([userId, courseId])
 }
 
 model Lesson {
@@ -58,15 +75,17 @@ model Announcement {
 }
 
 model Payment {
-  id      Int      @id @default(autoincrement())
-  student String
-  course  String
-  method  String
-  amount  String
-  status  String   // Paid | Pending | Refunded
-  date    DateTime @default(now())
-  userId  Int?
-  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id       Int      @id @default(autoincrement())
+  student  String
+  course   String
+  method   String
+  amount   String
+  status   String   // Paid | Pending | Refunded
+  date     DateTime @default(now())
+  userId   Int?
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  courseId Int?
+  courseRef Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
 }
 
 model Broker {

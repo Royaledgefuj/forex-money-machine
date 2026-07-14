@@ -5,6 +5,7 @@ const fs = require('fs');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
+const { enrollAllMembersInCourse } = require('../enrollment');
 
 const router = express.Router();
 
@@ -33,6 +34,9 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     data: { name, category: category || 'Beginner', price: price || '$0', status: status || 'Draft' },
   });
   await logActivity(`Created new course "${course.name}"`);
+  if (course.status === 'Published') {
+    await enrollAllMembersInCourse(course.id);
+  }
   res.status(201).json(course);
 });
 
@@ -46,8 +50,12 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (status !== undefined) data.status = status;
   if (students !== undefined) data.students = students;
 
+  const before = await prisma.course.findUnique({ where: { id } });
   const course = await prisma.course.update({ where: { id }, data });
   await logActivity(`Updated course "${course.name}"`);
+  if (before && before.status !== 'Published' && course.status === 'Published') {
+    await enrollAllMembersInCourse(course.id);
+  }
   res.json(course);
 });
 
@@ -64,6 +72,28 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   await prisma.course.delete({ where: { id } });
   await logActivity(`Deleted course "${course.name}"`);
   res.json({ ok: true });
+});
+
+// ---- Individual course purchase (alternative to membership) ----
+router.post('/:id/purchase-request', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const course = await prisma.course.findUnique({ where: { id } });
+  if (!course || course.status !== 'Published') return res.status(404).json({ error: 'Course not found' });
+
+  const existingAccess = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: req.user.id, courseId: id } } });
+  if (existingAccess) return res.status(409).json({ error: 'You already have access to this course' });
+
+  const existingPending = await prisma.payment.findFirst({ where: { userId: req.user.id, courseId: id, status: 'Pending' } });
+  if (existingPending) return res.status(409).json({ error: 'You already have a pending request for this course' });
+
+  const payment = await prisma.payment.create({
+    data: {
+      userId: req.user.id, courseId: id, student: req.user.name, course: course.name,
+      method: 'Manual', amount: course.price, status: 'Pending',
+    },
+  });
+  await logActivity(`${req.user.name} requested access to "${course.name}"`);
+  res.status(201).json(payment);
 });
 
 // ---- Lessons / video uploads ----
