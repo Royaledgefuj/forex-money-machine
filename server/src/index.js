@@ -23,6 +23,7 @@ app.use('/api/membership', require('./routes/membership'));
 app.use('/api/enrollments', require('./routes/enrollments'));
 app.use('/api/payment-methods', require('./routes/paymentMethods'));
 app.use('/api/signals', require('./routes/signals'));
+app.use('/api/resources', require('./routes/resources'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

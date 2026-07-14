@@ -25,6 +25,7 @@
       <button class="dash-nav-item" data-panel="students"><span class="ic">🧑‍🎓</span>Students</button>
       <button class="dash-nav-item" data-panel="courses"><span class="ic">🎓</span>Courses</button>
       <button class="dash-nav-item" data-panel="live"><span class="ic">🔴</span>Live Classes</button>
+      <button class="dash-nav-item" data-panel="downloads"><span class="ic">⬇️</span>Downloads &amp; Tools</button>
       <button class="dash-nav-item" data-panel="announcements"><span class="ic">📣</span>Announcements</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments</button>
       <button class="dash-nav-item" data-panel="paymentMethods"><span class="ic">🏦</span>Payment Methods</button>
@@ -178,6 +179,39 @@
         </div>
       </section>
 
+      <!-- DOWNLOADS & TOOLS -->
+      <section class="dash-panel" data-panel="downloads">
+        <div class="panel-grid">
+          <div class="card">
+            <div class="card-head"><h3>Uploaded Downloads</h3></div>
+            <div id="resourceRows" class="lesson-list"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Upload New Download</h3></div>
+            <form class="form-grid" id="resourceForm">
+              <div class="form-field full"><label>Name</label><input type="text" id="resName" placeholder="e.g. ICT Order Block Indicator" required></div>
+              <div class="form-field"><label>Type</label>
+                <select id="resType">
+                  <option>TradingView Indicator</option>
+                  <option>MT4 Indicator Pack</option>
+                  <option>MT5 Indicator Pack</option>
+                  <option>MT4/MT5 Template</option>
+                  <option>Excel Sheet</option>
+                  <option>Trading Toolkit</option>
+                  <option>MT4/MT5 EA</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Required Tier</label>
+                <select id="resTier"><option>Silver</option><option>Gold</option><option>Platinum</option></select>
+              </div>
+              <div class="form-field full"><label>Version</label><input type="text" id="resVersion" placeholder="v1.0" value="v1.0"></div>
+              <div class="form-field full"><label>File</label><input type="file" id="resFile" required></div>
+              <div class="form-field full"><button type="submit" class="btn btn-gold" id="resSubmitBtn">Upload</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+
       <!-- ANNOUNCEMENTS -->
       <section class="dash-panel" data-panel="announcements">
         <div class="panel-grid">
@@ -307,6 +341,6 @@
 </div>
 
 <script src="js/auth.js?v=2"></script>
-<script src="js/dashboard-admin.js?v=5"></script>
+<script src="js/dashboard-admin.js?v=6"></script>
 </body>
 </html>

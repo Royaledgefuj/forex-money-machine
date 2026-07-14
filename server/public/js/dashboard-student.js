@@ -132,29 +132,32 @@ document.getElementById('certList').innerHTML = CERTIFICATES.map((c) => `
     ${c.earned ? '<a href="#" class="btn btn-outline btn-sm">Download PDF</a>' : '<button class="btn btn-outline btn-sm" disabled>Locked</button>'}
   </div>`).join('');
 
-const DOWNLOADS = [
-  { name: 'TradingView Indicators', type: 'TradingView', version: 'v3.2', size: '48 KB', tier: 'Silver' },
-  { name: 'MT4 Indicators', type: 'MT4 Indicator Pack', version: 'v3.2', size: '64 KB', tier: 'Silver' },
-  { name: 'MT5 Indicators', type: 'MT5 Indicator Pack', version: 'v3.2', size: '64 KB', tier: 'Silver' },
-  { name: 'Chart Templates', type: 'MT4/MT5 Template', version: 'v2.0', size: '20 KB', tier: 'Silver' },
-  { name: 'Trading Journal', type: 'Excel Sheet', version: 'v2.3', size: '64 KB', tier: 'Gold' },
-  { name: 'Excel Sheets', type: 'Trading Toolkit', version: 'v4.1', size: '85 KB', tier: 'Gold' },
-  { name: 'Expert Advisors', type: 'MT4/MT5 EA', version: 'v1.8', size: '112 KB', tier: 'Platinum' },
-  { name: 'PDF Guides', type: 'PDF Guide', version: 'v1.0', size: '1.2 MB', tier: 'Free' },
-  { name: 'Risk Calculator', type: 'Excel Sheet', version: 'v1.4', size: '32 KB', tier: 'Free' },
-  { name: 'Lot Size Calculator', type: 'Excel Sheet', version: 'v1.2', size: '28 KB', tier: 'Free' },
+// The 3 free tools are static pages (no login required, no tier gating);
+// everything else is admin-uploaded via /api/resources and tier-gated.
+const FREE_TOOLS = [
+  { name: 'PDF Guides', type: 'Beginner Guide', version: 'v1.0', size: '—', tier: 'Free', href: 'guide.html' },
+  { name: 'Risk Calculator', type: 'Interactive Tool', version: 'v1.0', size: '—', tier: 'Free', href: 'risk-calculator.html' },
+  { name: 'Lot Size Calculator', type: 'Interactive Tool', version: 'v1.0', size: '—', tier: 'Free', href: 'lot-size-calculator.html' },
 ];
-function renderDownloads() {
+
+async function renderDownloads() {
   const myTier = (session && session.membershipTier) || 'Free';
-  document.getElementById('downloadList').innerHTML = DOWNLOADS.map((d) => {
+  const resources = await apiFetch('/resources');
+  const all = FREE_TOOLS.concat(resources.map((r) => ({
+    name: r.name, type: r.type, version: r.version, size: r.size, tier: r.tier, filePath: r.filePath,
+  })));
+
+  document.getElementById('downloadList').innerHTML = all.map((d) => {
     const unlocked = tierRank(myTier) >= tierRank(d.tier);
     return `
     <div class="download-tile">
       <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill ${d.tier === 'Free' ? 'pill-success' : 'pill-warn'}">${d.tier}</span></div>
       <p class="meta">${d.type} · ${d.size} · ${d.version}</p>
-      ${unlocked
-        ? `<a href="#" class="btn btn-gold btn-sm">Download</a>`
-        : `<button class="btn btn-outline btn-sm" data-upgrade-tier="${d.tier}">🔒 Requires ${d.tier}</button>`}
+      ${d.href
+        ? `<a href="${d.href}" class="btn btn-gold btn-sm">Open</a>`
+        : unlocked
+          ? `<a href="${MEDIA_BASE}${d.filePath}" class="btn btn-gold btn-sm" download>Download</a>`
+          : `<button class="btn btn-outline btn-sm" data-upgrade-tier="${d.tier}">🔒 Requires ${d.tier}</button>`}
     </div>`;
   }).join('');
 }

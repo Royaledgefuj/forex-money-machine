@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals',
+  downloads: 'Downloads & Tools', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals',
   brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
@@ -235,6 +235,53 @@ document.getElementById('liveForm').addEventListener('submit', async (e) => {
   await apiFetch('/live-classes', { method: 'POST', body: JSON.stringify({ title, when: `${date} · ${time}`, platform }) });
   await Promise.all([loadLive(), loadActivity()]);
   e.target.reset();
+});
+
+// ================= DOWNLOADS & TOOLS =================
+let RESOURCES = [];
+async function loadResources() {
+  RESOURCES = await apiFetch('/resources');
+  document.getElementById('resourceRows').innerHTML = RESOURCES.length ? RESOURCES.map((r) => `
+    <div class="lesson-item">
+      <div class="lesson-ic">⬇️</div>
+      <div class="lesson-info">
+        <strong>${r.name} <span class="badge-pill pill-warn">${r.tier}</span></strong>
+        <span>${r.type} · ${r.version} · ${r.size} · ${r.fileName}</span>
+      </div>
+      <button class="icon-btn danger" title="Delete" data-id="${r.id}">🗑</button>
+    </div>`).join('') : '<p class="empty-note">No downloads uploaded yet.</p>';
+}
+document.getElementById('resourceRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const resource = RESOURCES.find((r) => r.id === Number(btn.dataset.id));
+  if (!confirm(`Delete "${resource.name}"?`)) return;
+  await apiFetch(`/resources/${resource.id}`, { method: 'DELETE' });
+  await Promise.all([loadResources(), loadActivity()]);
+});
+document.getElementById('resourceForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById('resFile');
+  const file = fileInput.files[0];
+  if (!file) return;
+  const submitBtn = document.getElementById('resSubmitBtn');
+  submitBtn.disabled = true;
+  try {
+    const formData = new FormData();
+    formData.append('name', document.getElementById('resName').value);
+    formData.append('type', document.getElementById('resType').value);
+    formData.append('tier', document.getElementById('resTier').value);
+    formData.append('version', document.getElementById('resVersion').value);
+    formData.append('file', file);
+    await apiFetch('/resources', { method: 'POST', body: formData });
+    await Promise.all([loadResources(), loadActivity()]);
+    e.target.reset();
+    document.getElementById('resVersion').value = 'v1.0';
+  } catch (err) {
+    alert('Upload failed: ' + err.message);
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 
 // ================= ANNOUNCEMENTS =================
@@ -475,7 +522,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lot Size Calculator | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=3">
+<link rel="stylesheet" href="css/calculators.css?v=1">
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">F</span>
+      <span class="brand-text">Forex Money Machine<em>Academy</em></span>
+    </a>
+    <div class="header-actions">
+      <a href="risk-calculator.html" class="btn btn-ghost">Risk Calculator</a>
+      <a href="index.html#tools" class="btn btn-outline">Back to Tools</a>
+    </div>
+  </div>
+</header>
+
+<div class="calc-shell">
+  <div class="calc-head">
+    <p class="kicker">Free Tool</p>
+    <h1>Lot Size Calculator</h1>
+    <p>Decide your risk % first — this tells you exactly what position size to trade.</p>
+  </div>
+
+  <div class="calc-card">
+    <div class="calc-form">
+      <div class="form-field">
+        <label>Account Balance (USD)</label>
+        <input type="number" id="lsBalance" min="0" step="1" value="1000">
+      </div>
+      <div class="form-field">
+        <label>Risk per Trade (%)</label>
+        <input type="number" id="lsRiskPct" min="0" step="0.1" value="1">
+      </div>
+      <div class="form-field">
+        <label>Stop Loss (Pips)</label>
+        <input type="number" id="lsStopPips" min="0" step="1" value="20">
+      </div>
+      <div class="form-field">
+        <label>Pair</label>
+        <select id="lsPair">
+          <option value="10">EUR/USD, GBP/USD, AUD/USD, NZD/USD (~$10/pip per lot)</option>
+          <option value="10-jpy">USD/JPY, USD/CHF, USD/CAD (~$10/pip per lot)</option>
+          <option value="1">XAU/USD Gold (~$1/pip per lot)</option>
+          <option value="custom">Custom pip value</option>
+        </select>
+      </div>
+      <div class="form-field" id="lsCustomWrap" hidden>
+        <label>Custom Pip Value ($ per standard lot)</label>
+        <input type="number" id="lsCustomPip" min="0" step="0.01" value="10">
+      </div>
+    </div>
+
+    <div class="calc-results">
+      <div class="calc-result-tile">
+        <span class="calc-result-label">Dollar Risk Amount</span>
+        <span class="calc-result-num" id="lsDollarRisk">$0.00</span>
+      </div>
+      <div class="calc-result-tile">
+        <span class="calc-result-label">Recommended Lot Size</span>
+        <span class="calc-result-num" id="lsLotSize">0.00 lots</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="calc-disclaimer">Pip values shown are standard approximations for a full standard lot (100,000 units) and may vary slightly by broker and live exchange rate. This tool is for educational purposes only and is not financial advice.</p>
+</div>
+
+<script src="js/calculators.js?v=1"></script>
+</body>
+</html>

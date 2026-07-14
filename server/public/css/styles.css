@@ -250,6 +250,7 @@ p{ margin:0 0 1em; color: var(--muted); }
 .tool-item{
   display:flex; align-items:center; gap:12px; background: var(--card-bg); border:1px solid var(--border);
   border-radius: 12px; padding:18px 20px; font-size:.9rem; font-weight:600; transition: border-color .2s ease, transform .2s ease;
+  text-decoration:none; color: var(--white); cursor:pointer;
 }
 .tool-item:hover{ border-color: rgba(212,175,55,0.4); transform: translateY(-3px); }
 .tool-icon{ font-size:1.3rem; }

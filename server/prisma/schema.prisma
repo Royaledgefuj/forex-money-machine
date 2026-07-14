@@ -112,6 +112,18 @@ model SignalProof {
   submittedAt DateTime @default(now())
 }
 
+model Resource {
+  id         Int      @id @default(autoincrement())
+  name       String
+  type       String
+  tier       String   // Silver | Gold | Platinum
+  version    String   @default("v1.0")
+  fileName   String
+  filePath   String
+  size       String
+  uploadedAt DateTime @default(now())
+}
+
 model Broker {
   id         Int    @id @default(autoincrement())
   name       String

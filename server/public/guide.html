@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beginner's Guide to Forex Trading | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=3">
+<style>
+  body{ min-height:100vh; }
+  .guide-shell{ max-width:900px; margin:0 auto; padding:110px 24px 80px; }
+  .guide-head{ text-align:center; margin-bottom:32px; }
+  .guide-head h1{ font-size:1.9rem; margin-bottom:10px; }
+  .guide-head p{ color:var(--muted); font-size:.92rem; }
+  .guide-viewer{
+    background: var(--card-bg); border:1px solid var(--border); border-radius: var(--radius);
+    padding:24px; display:flex; flex-direction:column; align-items:center; gap:16px;
+    user-select:none; -webkit-user-select:none;
+  }
+  .guide-viewer canvas{ max-width:100%; height:auto; border-radius:8px; box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .guide-nav{ display:flex; align-items:center; gap:18px; }
+  .guide-nav button{
+    background: var(--gold-gradient); color:#1a1305; border:none; border-radius:8px; padding:9px 18px;
+    font-weight:700; font-size:.85rem; cursor:pointer; font-family: var(--font-sans);
+  }
+  .guide-nav button:disabled{ opacity:.4; cursor:not-allowed; }
+  .guide-nav span{ color:var(--muted); font-size:.85rem; font-weight:600; }
+  .guide-note{ text-align:center; font-size:.78rem; color:var(--muted-dim); margin-top:18px; max-width:520px; margin-left:auto; margin-right:auto; }
+  .guide-loading{ color:var(--muted); font-size:.9rem; padding:60px 0; }
+</style>
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">F</span>
+      <span class="brand-text">Forex Money Machine<em>Academy</em></span>
+    </a>
+    <div class="header-actions">
+      <a href="index.html#tools" class="btn btn-ghost">Back to Tools</a>
+    </div>
+  </div>
+</header>
+
+<div class="guide-shell">
+  <div class="guide-head">
+    <h1>The Beginner's Guide to Forex Trading</h1>
+    <p>Free for every visitor — view online, no account needed.</p>
+  </div>
+
+  <div class="guide-viewer" id="guideViewer" oncontextmenu="return false">
+    <p class="guide-loading" id="guideLoading">Loading guide…</p>
+  </div>
+
+  <p class="guide-note">This guide is for online viewing only. For the full course library, courses, and downloadable tools, <a href="login.html" style="color:var(--gold-light);font-weight:600;">create a free account</a>.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const viewer = document.getElementById('guideViewer');
+  const loading = document.getElementById('guideLoading');
+  let pdfDoc = null;
+  let currentPage = 1;
+
+  async function renderPage(num) {
+    const page = await pdfDoc.getPage(num);
+    const canvas = document.getElementById('guideCanvas');
+    const scale = Math.min(1.6, (viewer.clientWidth - 48) / page.getViewport({ scale: 1 }).width);
+    const viewport = page.getViewport({ scale });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    document.getElementById('guidePageLabel').textContent = `Page ${num} of ${pdfDoc.numPages}`;
+    document.getElementById('guidePrevBtn').disabled = num <= 1;
+    document.getElementById('guideNextBtn').disabled = num >= pdfDoc.numPages;
+  }
+
+  pdfjsLib.getDocument('assets/forex-basics-guide.pdf').promise.then((doc) => {
+    pdfDoc = doc;
+    loading.remove();
+    viewer.innerHTML = `
+      <canvas id="guideCanvas"></canvas>
+      <div class="guide-nav">
+        <button id="guidePrevBtn">&larr; Previous</button>
+        <span id="guidePageLabel"></span>
+        <button id="guideNextBtn">Next &rarr;</button>
+      </div>`;
+    document.getElementById('guidePrevBtn').addEventListener('click', () => { if (currentPage > 1) renderPage(--currentPage); });
+    document.getElementById('guideNextBtn').addEventListener('click', () => { if (currentPage < pdfDoc.numPages) renderPage(++currentPage); });
+    renderPage(currentPage);
+  }).catch((err) => {
+    loading.textContent = 'Could not load the guide right now. Please try again shortly.';
+    console.error(err);
+  });
+</script>
+</body>
+</html>
