@@ -193,6 +193,27 @@ revealTargets.forEach((el) => revealObserver.observe(el));
   else draw();
 })();
 
+// ---- Live market ticker ----
+async function loadTicker() {
+  const track = document.getElementById('tickerTrack');
+  if (!track) return;
+  try {
+    const quotes = await (await fetch(`${API_BASE}/market-quotes`)).json();
+    const itemsHtml = quotes.map((q) => {
+      if (q.price == null) return `<span>${q.label} <em>—</em></span>`;
+      const priceStr = q.price.toLocaleString(undefined, { minimumFractionDigits: q.decimals, maximumFractionDigits: q.decimals });
+      const arrow = q.up ? '▲' : '▼';
+      const cls = q.up ? 'up' : 'down';
+      return `<span>${q.label} <em class="${cls}">${priceStr} ${arrow}</em></span>`;
+    }).join('');
+    track.innerHTML = itemsHtml + itemsHtml;
+  } catch (err) {
+    console.error('Ticker load failed:', err);
+  }
+}
+loadTicker();
+setInterval(loadTicker, 30000);
+
 // ---- Sticky header shadow on scroll ----
 const header = document.getElementById('siteHeader');
 window.addEventListener('scroll', () => {
