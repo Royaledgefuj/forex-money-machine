@@ -22,14 +22,15 @@ navToggle.addEventListener('click', () => {
 const stats = document.querySelectorAll('.stat-num');
 const animateStat = (el) => {
   const target = parseInt(el.dataset.count, 10);
+  const suffix = el.dataset.suffix || '';
   const duration = 1600;
   const start = performance.now();
   const step = (now) => {
     const progress = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.floor(eased * target).toLocaleString();
+    el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
     if (progress < 1) requestAnimationFrame(step);
-    else el.textContent = target.toLocaleString();
+    else el.textContent = target.toLocaleString() + suffix;
   };
   requestAnimationFrame(step);
 };
