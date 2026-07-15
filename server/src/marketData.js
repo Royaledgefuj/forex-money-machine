@@ -9,17 +9,19 @@ const INSTRUMENTS = [
   { label: 'XAU/USD', source: 'twelvedata', symbol: 'XAU/USD', decimals: 2 },
   { label: 'GBP/JPY', source: 'twelvedata', symbol: 'GBP/JPY', decimals: 2 },
   { label: 'US30', source: 'twelvedata', symbol: 'DJI', decimals: 0 },
-  { label: 'BTC/USD', source: 'binance', symbol: 'BTCUSDT', decimals: 0 },
+  { label: 'BTC/USD', source: 'coingecko', symbol: 'bitcoin', decimals: 0 },
   { label: 'NAS100', source: 'twelvedata', symbol: 'NDX', decimals: 0 },
 ];
 
 let cache = INSTRUMENTS.map((i) => ({ label: i.label, price: null, changePct: null, up: true, decimals: i.decimals }));
 
-async function fetchBinance() {
-  const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
-  if (!res.ok) throw new Error(`Binance request failed (${res.status})`);
+// CoinGecko instead of Binance: Binance.com's public API geo-blocks requests from
+// US-hosted cloud infrastructure (like Railway), returning HTTP 451.
+async function fetchCrypto() {
+  const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+  if (!res.ok) throw new Error(`CoinGecko request failed (${res.status})`);
   const data = await res.json();
-  return { price: parseFloat(data.lastPrice), changePct: parseFloat(data.priceChangePercent) };
+  return { price: data.bitcoin.usd, changePct: data.bitcoin.usd_24h_change };
 }
 
 async function fetchTwelveData(symbols) {
@@ -32,16 +34,16 @@ async function fetchTwelveData(symbols) {
 
 async function refresh() {
   const tdSymbols = INSTRUMENTS.filter((i) => i.source === 'twelvedata').map((i) => i.symbol);
-  const [binance, twelvedata] = await Promise.allSettled([fetchBinance(), fetchTwelveData(tdSymbols)]);
+  const [crypto, twelvedata] = await Promise.allSettled([fetchCrypto(), fetchTwelveData(tdSymbols)]);
 
-  if (binance.status === 'rejected') console.error('[marketData] Binance fetch failed:', binance.reason.message);
+  if (crypto.status === 'rejected') console.error('[marketData] CoinGecko fetch failed:', crypto.reason.message);
   if (twelvedata.status === 'rejected') console.error('[marketData] Twelve Data fetch failed:', twelvedata.reason.message);
 
   cache = INSTRUMENTS.map((inst) => {
     const prev = cache.find((c) => c.label === inst.label);
 
-    if (inst.source === 'binance' && binance.status === 'fulfilled') {
-      const { price, changePct } = binance.value;
+    if (inst.source === 'coingecko' && crypto.status === 'fulfilled') {
+      const { price, changePct } = crypto.value;
       return { label: inst.label, price, changePct, up: changePct >= 0, decimals: inst.decimals };
     }
     if (inst.source === 'twelvedata' && twelvedata.status === 'fulfilled') {
