@@ -54,7 +54,6 @@
         <p>Demo access — no real account needed:</p>
         <div class="auth-demo-buttons">
           <button type="button" class="btn btn-ghost btn-sm" id="demoStudentBtn">Continue as Demo Student</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="demoAdminBtn">Continue as Demo Admin</button>
         </div>
       </div>
     </form>
@@ -138,7 +137,6 @@
   });
 
   document.getElementById('demoStudentBtn').addEventListener('click', async () => goToDashboard(await Auth.loginDemo('student')));
-  document.getElementById('demoAdminBtn').addEventListener('click', async () => goToDashboard(await Auth.loginDemo('admin')));
 
   // If already logged in with a real token, skip straight to dashboard.
   const existing = Auth.getSession();

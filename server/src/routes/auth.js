@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { notifyAdmin } = require('../email');
 
 const router = express.Router();
@@ -44,6 +44,23 @@ router.post('/register', async (req, res) => {
 
   const token = signToken(user);
   res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier } });
+});
+
+// Admin-only: create another admin account. Existing admins provision new ones —
+// there's no public sign-up path for the admin role.
+router.post('/create-admin', requireAuth, requireAdmin, async (req, res) => {
+  const { email, password, name } = req.body;
+  if (!email || !password || !name) return res.status(400).json({ error: 'Name, email and password are required' });
+  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+  const existing = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+  if (existing) return res.status(409).json({ error: 'An account with this email already exists' });
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: { email: email.trim().toLowerCase(), passwordHash, name, role: 'admin', status: 'Active' },
+  });
+  res.status(201).json({ id: user.id, email: user.email, name: user.name, role: user.role });
 });
 
 router.get('/me', requireAuth, async (req, res) => {
