@@ -2,7 +2,7 @@ const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
-const { enrollAllMembersInCourse } = require('../enrollment');
+const { enrollAllMembersInCourse, hasAccessToCourse } = require('../enrollment');
 const { notifyAdmin } = require('../email');
 
 const router = express.Router();
@@ -76,9 +76,8 @@ router.get('/:id/watch', requireAuth, async (req, res) => {
   const course = await prisma.course.findUnique({ where: { id }, include: { lessons: true } });
   if (!course) return res.status(404).json({ error: 'Course not found' });
 
-  if (req.user.role !== 'admin') {
-    const enrollment = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: req.user.id, courseId: id } } });
-    if (!enrollment) return res.status(403).json({ error: 'You do not have access to this course' });
+  if (req.user.role !== 'admin' && !(await hasAccessToCourse(req.user.id, id))) {
+    return res.status(403).json({ error: 'You do not have access to this course' });
   }
 
   res.json({

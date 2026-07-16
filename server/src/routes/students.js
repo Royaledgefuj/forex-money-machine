@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
+const { PAID_TIERS, enrollUserInCurrentBatch } = require('../enrollment');
 
 const router = express.Router();
 
@@ -27,7 +28,10 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
 
   const student = await prisma.user.update({ where: { id }, data });
   if (status !== undefined) await logActivity(`${status === 'Active' ? 'Approved' : 'Suspended'} student ${student.name}`);
-  if (membershipTier !== undefined) await logActivity(`Set ${student.name}'s membership to ${membershipTier}`);
+  if (membershipTier !== undefined) {
+    await logActivity(`Set ${student.name}'s membership to ${membershipTier}`);
+    if (PAID_TIERS.includes(membershipTier)) await enrollUserInCurrentBatch(student.id, 'membership');
+  }
   if (signalsAccess !== undefined) await logActivity(`${signalsAccess ? 'Granted' : 'Revoked'} ${student.name}'s signals access`);
   res.json(student);
 });

@@ -28,4 +28,17 @@ async function enrollAllMembersInCourse(courseId) {
   }
 }
 
-module.exports = { PAID_TIERS, enrollUserInCourse, enrollUserInCurrentBatch, enrollAllMembersInCourse };
+// Single source of truth for "can this student actually watch this course" —
+// either a real Enrollment row, or a paid membership tier while it's the current batch.
+async function hasAccessToCourse(userId, courseId) {
+  const enrollment = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
+  if (enrollment) return true;
+
+  const [user, course] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId } }),
+    prisma.course.findUnique({ where: { id: courseId } }),
+  ]);
+  return !!(user && course && PAID_TIERS.includes(user.membershipTier) && course.isCurrentBatch);
+}
+
+module.exports = { PAID_TIERS, enrollUserInCourse, enrollUserInCurrentBatch, enrollAllMembersInCourse, hasAccessToCourse };
