@@ -17,6 +17,8 @@ model User {
   membershipTier String       @default("Free") // Free | Silver | Gold | Platinum
   coursesCount   Int          @default(0)
   joinedAt       DateTime     @default(now())
+  country        String?
+  phone          String?
   signalsAccess  Boolean      @default(false)
   payments       Payment[]
   enrollments    Enrollment[]

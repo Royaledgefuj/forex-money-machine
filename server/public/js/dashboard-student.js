@@ -1,5 +1,4 @@
-// Student Dashboard — Payments, Support Tickets, Courses (Enrollment), Live Classes, and Membership
-// are backed by the real API; certificates/leaderboard have no backing model yet, so they stay illustrative.
+// Student Dashboard — every panel is backed by the real API.
 
 const session = Auth.requireRole('student');
 
@@ -61,6 +60,7 @@ async function loadEnrollments() {
   document.getElementById('courseList').innerHTML = data.accessible.length
     ? data.accessible.map(courseRow).join('')
     : '<p class="empty-note">No courses yet. Upgrade your membership or purchase a course to get started.</p>';
+  document.getElementById('enrolledCount').textContent = `${data.accessible.length} active`;
   document.getElementById('courseRecommended').innerHTML = data.notAccessible.length
     ? data.notAccessible.map((c) => `
     <div class="course-row">
@@ -104,20 +104,29 @@ loadLiveClasses();
   });
 });
 
-const ANNOUNCEMENTS = [
-  { title: 'New Course: Funded Account Program 2.0', time: '2 days ago' },
-  { title: 'Server maintenance for video portal, Jul 12', time: '4 days ago' },
-  { title: 'July trading challenge leaderboard is live', time: '1 week ago' },
-];
-document.getElementById('overviewAnnouncements').innerHTML = ANNOUNCEMENTS.map((a) => `
-  <div class="list-item"><span class="list-dot"></span><div><strong>${a.title}</strong><span>${a.time}</span></div></div>`).join('');
+async function loadAnnouncements() {
+  const announcements = await apiFetch('/announcements');
+  document.getElementById('overviewAnnouncements').innerHTML = announcements.length ? announcements.slice(0, 5).map((a) => `
+    <div class="list-item"><span class="list-dot"></span><div><strong>${a.title}</strong><span>${new Date(a.sentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></div></div>`).join('')
+    : '<p class="empty-note">No announcements yet.</p>';
+}
+loadAnnouncements();
 
-const LEADERBOARD = [
-  { name: 'Sara A.', points: 4820 }, { name: 'David M.', points: 4510 }, { name: session ? session.name : 'You', points: 3990, self: true }, { name: 'Omar T.', points: 3820 },
-];
-document.getElementById('overviewLeaderboard').innerHTML = LEADERBOARD.map((l, i) => `
-  <div class="list-item"><span class="list-dot" style="${l.self ? 'background:var(--up)' : ''}"></span>
-  <div><strong>#${i + 1} ${l.name}${l.self ? ' (You)' : ''}</strong><span>${l.points.toLocaleString()} XP</span></div></div>`).join('');
+async function loadOverviewStats() {
+  const [enrollments, certificates, payments] = await Promise.all([
+    apiFetch('/enrollments/mine'), apiFetch('/certificates/mine'), apiFetch('/payments'),
+  ]);
+  const pendingCount = payments.filter((p) => p.student === session.name && p.status === 'Pending').length;
+  const stats = [
+    { icon: '🎓', num: enrollments.accessible.length, label: 'Enrolled Courses' },
+    { icon: '📜', num: certificates.length, label: 'Certificates Earned' },
+    { icon: '💎', num: session.membershipTier || 'Free', label: 'Membership Tier' },
+    { icon: '⏳', num: pendingCount, label: 'Pending Requests' },
+  ];
+  document.getElementById('overviewStats').innerHTML = stats.map((s) => `
+    <div class="stat-card"><div class="stat-top"><span class="ic">${s.icon}</span></div><span class="num">${s.num}</span><span class="label">${s.label}</span></div>`).join('');
+}
+loadOverviewStats();
 
 async function loadCertificates() {
   const certificates = await apiFetch('/certificates/mine');
@@ -378,10 +387,8 @@ async function loadSignals() {
 }
 loadSignals();
 
-document.getElementById('brokerAccounts').innerHTML = `
-  <div class="course-row"><div class="thumb">EX</div><div class="course-row-info"><strong>Exness</strong><span class="progress-pct">Account #88213 · Linked Jun 2026</span></div><span class="badge-pill pill-success">Verified</span></div>
-  <div class="course-row"><div class="thumb">PU</div><div class="course-row-info"><strong>PU Prime</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>
-  <div class="course-row"><div class="thumb">JM</div><div class="course-row-info"><strong>JustMarkets</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Link Account</a></div>`;
+document.getElementById('brokerAccounts').innerHTML = ['Exness', 'PU Prime', 'JustMarkets'].map((name) => `
+  <div class="course-row"><div class="thumb">${name.split(' ').map((w) => w[0]).join('')}</div><div class="course-row-info"><strong>${name}</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Open Account</a></div>`).join('');
 
 document.getElementById('dashCommunity').innerHTML = [
   ['💬', 'WhatsApp', 'https://whatsapp.com/channel/0029VbBnrw82v1IqtqOh5N01'],
@@ -407,4 +414,42 @@ document.getElementById('ticketForm').addEventListener('submit', async (e) => {
   alert('Ticket submitted! Our support team will respond within 24 hours.');
   e.target.reset();
   loadTickets();
+});
+
+// ================= PROFILE & SECURITY =================
+async function loadProfile() {
+  const me = await apiFetch('/auth/me');
+  document.getElementById('profileCountry').value = me.country || '';
+  document.getElementById('profilePhone').value = me.phone || '';
+}
+loadProfile();
+
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('profileName').value;
+  const country = document.getElementById('profileCountry').value;
+  const phone = document.getElementById('profilePhone').value;
+  await apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify({ name, country, phone }) });
+
+  const stored = Auth.getSession();
+  if (stored) {
+    stored.name = name;
+    localStorage.setItem('fmm_session', JSON.stringify(stored));
+    document.getElementById('userName').textContent = name;
+    document.getElementById('welcomeMsg').textContent = `Welcome back, ${name.split(' ')[0]}!`;
+  }
+  alert('Profile updated.');
+});
+
+document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const currentPassword = document.getElementById('currentPassword').value;
+  const newPassword = document.getElementById('newPassword').value;
+  try {
+    await apiFetch('/auth/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) });
+    alert('Password updated.');
+    e.target.reset();
+  } catch (err) {
+    alert(err.message);
+  }
 });
