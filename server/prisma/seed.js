@@ -43,24 +43,7 @@ async function main() {
     });
   }
 
-  const liveClasses = [
-    { title: 'Weekly Gold (XAUUSD) Market Breakdown', when: 'Today, 8:00 PM GST', platform: 'YouTube Live', attendees: 412 },
-    { title: 'ICT Kill Zones Workshop', when: 'Thu, Jul 11 · 7:00 PM GST', platform: 'Zoom', attendees: 0 },
-    { title: 'Trading Psychology Q&A', when: 'Sat, Jul 13 · 6:00 PM GST', platform: 'Google Meet', attendees: 0 },
-  ];
-  for (const lc of liveClasses) {
-    const existing = await prisma.liveClass.findFirst({ where: { title: lc.title } });
-    if (!existing) await prisma.liveClass.create({ data: lc });
-  }
-
-  const announcements = [
-    { title: 'New Course: Funded Account Program 2.0', audience: 'All Students' },
-    { title: 'Server maintenance for video portal', audience: 'All Students' },
-  ];
-  for (const a of announcements) {
-    const existing = await prisma.announcement.findFirst({ where: { title: a.title } });
-    if (!existing) await prisma.announcement.create({ data: a });
-  }
+  // Live classes and announcements are entirely admin-managed now — no seed data.
 
   const payments = [
     { student: 'Rayan Khan', course: 'Smart Money Concepts', method: 'USDT (TRC20)', amount: '$249.00', status: 'Paid' },
