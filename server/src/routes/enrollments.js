@@ -6,8 +6,8 @@ const { PAID_TIERS } = require('../enrollment');
 const router = express.Router();
 
 // Returns the student's real course access: every course they have an
-// Enrollment row for, PLUS (if they hold a paid membership) every published
-// course, since membership is an all-access pass.
+// Enrollment row for, PLUS (if they hold a paid membership) the current batch,
+// since membership only rolls forward with whichever batch is active right now.
 router.get('/mine', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   const enrollments = await prisma.enrollment.findMany({ where: { userId: req.user.id }, include: { course: true } });
@@ -18,18 +18,17 @@ router.get('/mine', requireAuth, async (req, res) => {
     progress: e.progress, completed: e.completed, source: e.source,
   }));
 
-  let notAccessible = [];
   if (PAID_TIERS.includes(user.membershipTier)) {
-    const published = await prisma.course.findMany({ where: { status: 'Published' } });
-    const missing = published.filter((c) => !enrolledIds.has(c.id));
-    accessible = accessible.concat(missing.map((c) => ({
-      id: c.id, name: c.name, category: c.category, price: c.price, progress: 0, completed: false, source: 'membership',
-    })));
-  } else {
-    const published = await prisma.course.findMany({ where: { status: 'Published' } });
-    notAccessible = published.filter((c) => !enrolledIds.has(c.id))
-      .map((c) => ({ id: c.id, name: c.name, category: c.category, price: c.price }));
+    const current = await prisma.course.findFirst({ where: { isCurrentBatch: true } });
+    if (current && !enrolledIds.has(current.id)) {
+      accessible.push({ id: current.id, name: current.name, category: current.category, price: current.price, progress: 0, completed: false, source: 'membership' });
+      enrolledIds.add(current.id);
+    }
   }
+
+  const published = await prisma.course.findMany({ where: { status: 'Published' } });
+  const notAccessible = published.filter((c) => !enrolledIds.has(c.id))
+    .map((c) => ({ id: c.id, name: c.name, category: c.category, price: c.price }));
 
   res.json({ membershipTier: user.membershipTier, accessible, notAccessible });
 });

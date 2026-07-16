@@ -98,7 +98,7 @@ async function loadCourses() {
   COURSES = await apiFetch('/courses');
   document.getElementById('courseRows').innerHTML = COURSES.map((c, i) => `
     <tr>
-      <td><strong>${c.name}</strong></td>
+      <td><strong>${c.name}</strong> ${c.isCurrentBatch ? '<span class="badge-pill pill-warn">★ Current Batch</span>' : ''}</td>
       <td>${c.category}</td>
       <td>${c.price}</td>
       <td>${c.students.toLocaleString()}</td>
@@ -106,6 +106,7 @@ async function loadCourses() {
       <td><div class="row-actions">
         <button class="icon-btn" title="Manage Content / Upload Video" data-action="manage" data-i="${i}">🎬</button>
         <button class="icon-btn" title="Edit" data-action="edit" data-i="${i}">✎</button>
+        ${!c.isCurrentBatch ? `<button class="icon-btn" title="Set as Current Batch" data-action="setCurrent" data-i="${i}">⭐</button>` : ''}
         <button class="icon-btn danger" title="Delete" data-action="delete" data-i="${i}">🗑</button>
       </div></td>
     </tr>`).join('');
@@ -126,6 +127,10 @@ document.getElementById('courseRows').addEventListener('click', async (e) => {
     if (!confirm(`Delete course "${course.name}"?`)) return;
     await apiFetch(`/courses/${course.id}`, { method: 'DELETE' });
     if (selectedCourseIndex === i) selectedCourseIndex = null;
+  }
+  if (btn.dataset.action === 'setCurrent') {
+    if (!confirm(`Make "${course.name}" the current batch? Every paid member will automatically get access to it.`)) return;
+    await apiFetch(`/courses/${course.id}`, { method: 'PATCH', body: JSON.stringify({ isCurrentBatch: true, status: 'Published' }) });
   }
   if (btn.dataset.action === 'manage') {
     selectedCourseIndex = i;
@@ -335,12 +340,22 @@ document.getElementById('certificateForm').addEventListener('submit', async (e) 
 });
 
 // ================= ANNOUNCEMENTS =================
+let ANNOUNCEMENTS = [];
 async function loadAnnouncements() {
-  const announcements = await apiFetch('/announcements');
-  document.getElementById('announcementRows').innerHTML = announcements.length ? announcements.map((a) => `
-    <div class="list-item"><span class="list-dot"></span><div><strong>${a.title}</strong><span>${new Date(a.sentAt).toLocaleDateString()} · Sent to ${a.audience}</span></div></div>`).join('')
+  ANNOUNCEMENTS = await apiFetch('/announcements');
+  document.getElementById('announcementRows').innerHTML = ANNOUNCEMENTS.length ? ANNOUNCEMENTS.map((a) => `
+    <div class="list-item"><span class="list-dot"></span><div><strong>${a.title}</strong><span>${new Date(a.sentAt).toLocaleDateString()} · Sent to ${a.audience}</span></div>
+    <button class="icon-btn danger" title="Delete" data-id="${a.id}">🗑</button></div>`).join('')
     : '<p class="empty-note">No announcements sent yet.</p>';
 }
+document.getElementById('announcementRows').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-id]');
+  if (!btn) return;
+  const a = ANNOUNCEMENTS.find((x) => x.id === Number(btn.dataset.id));
+  if (!confirm(`Delete announcement "${a.title}"?`)) return;
+  await apiFetch(`/announcements/${a.id}`, { method: 'DELETE' });
+  await Promise.all([loadAnnouncements(), loadActivity()]);
+});
 document.getElementById('announceForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const inputs = e.target.querySelectorAll('input, textarea, select');

@@ -27,15 +27,16 @@ model User {
 }
 
 model Course {
-  id          Int          @id @default(autoincrement())
-  name        String
-  category    String
-  price       String
-  students    Int          @default(0)
-  status      String       @default("Draft") // Published | Draft
-  lessons     Lesson[]
-  enrollments Enrollment[]
-  payments    Payment[]
+  id             Int          @id @default(autoincrement())
+  name           String
+  category       String
+  price          String
+  students       Int          @default(0)
+  status         String       @default("Draft") // Published | Draft
+  isCurrentBatch Boolean      @default(false)
+  lessons        Lesson[]
+  enrollments    Enrollment[]
+  payments       Payment[]
 }
 
 model Enrollment {

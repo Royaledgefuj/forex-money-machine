@@ -28,6 +28,13 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(courses);
 });
 
+// Public — powers the homepage's Courses section, which always shows whichever batch is active.
+router.get('/current-batch', async (req, res) => {
+  const current = await prisma.course.findFirst({ where: { isCurrentBatch: true } });
+  if (!current) return res.status(404).json({ error: 'No current batch set' });
+  res.json({ id: current.id, name: current.name, price: current.price });
+});
+
 router.post('/', requireAuth, requireAdmin, async (req, res) => {
   const { name, category, price, status } = req.body;
   if (!name) return res.status(400).json({ error: 'Course name is required' });
@@ -35,15 +42,12 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
     data: { name, category: category || 'Beginner', price: price || '$0', status: status || 'Draft' },
   });
   await logActivity(`Created new course "${course.name}"`);
-  if (course.status === 'Published') {
-    await enrollAllMembersInCourse(course.id);
-  }
   res.status(201).json(course);
 });
 
 router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
-  const { name, category, price, status, students } = req.body;
+  const { name, category, price, status, students, isCurrentBatch } = req.body;
   const data = {};
   if (name !== undefined) data.name = name;
   if (category !== undefined) data.category = category;
@@ -51,10 +55,17 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (status !== undefined) data.status = status;
   if (students !== undefined) data.students = students;
 
-  const before = await prisma.course.findUnique({ where: { id } });
+  if (isCurrentBatch === true) {
+    await prisma.course.updateMany({ where: { isCurrentBatch: true }, data: { isCurrentBatch: false } });
+    data.isCurrentBatch = true;
+  } else if (isCurrentBatch === false) {
+    data.isCurrentBatch = false;
+  }
+
   const course = await prisma.course.update({ where: { id }, data });
   await logActivity(`Updated course "${course.name}"`);
-  if (before && before.status !== 'Published' && course.status === 'Published') {
+  if (isCurrentBatch === true) {
+    await logActivity(`Set "${course.name}" as the current batch`);
     await enrollAllMembersInCourse(course.id);
   }
   res.json(course);

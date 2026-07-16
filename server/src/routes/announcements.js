@@ -19,4 +19,13 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   res.status(201).json(announcement);
 });
 
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  const announcement = await prisma.announcement.findUnique({ where: { id } });
+  if (!announcement) return res.status(404).json({ error: 'Announcement not found' });
+  await prisma.announcement.delete({ where: { id } });
+  await logActivity(`Deleted announcement "${announcement.title}"`);
+  res.json({ ok: true });
+});
+
 module.exports = router;

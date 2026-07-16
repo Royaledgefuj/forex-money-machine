@@ -10,6 +10,22 @@ if (nextBatchBadge) {
   nextBatchBadge.textContent = `Next batch starts ${nextBatch.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}`;
 }
 
+// ---- Current batch (real course + price, no login required) ----
+(async function loadCurrentBatch() {
+  const heading = document.getElementById('programBatchHeading');
+  const priceEl = document.getElementById('programPrice');
+  if (!priceEl) return;
+  try {
+    const res = await fetch(`${API_BASE}/courses/current-batch`);
+    if (!res.ok) throw new Error('No current batch');
+    const batch = await res.json();
+    if (heading) heading.textContent = batch.name;
+    priceEl.textContent = batch.price;
+  } catch (err) {
+    priceEl.textContent = 'Coming soon';
+  }
+})();
+
 // ---- Mobile nav toggle ----
 const navToggle = document.getElementById('navToggle');
 const mainNav = document.getElementById('mainNav');
