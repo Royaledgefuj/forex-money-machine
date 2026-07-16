@@ -35,27 +35,11 @@ async function main() {
     });
   }
 
-  const courseSeed = [
-    { name: 'Beginner Forex Course', category: 'Beginner', price: '$99', students: 12340, status: 'Published',
-      lessons: [
-        { title: 'Welcome to the Academy', fileName: 'welcome-intro.mp4', filePath: '/uploads/videos/seed-welcome-intro.mp4', size: '84 MB', duration: '4:12' },
-        { title: 'Reading Your First Candlestick Chart', fileName: 'candlestick-basics.mp4', filePath: '/uploads/videos/seed-candlestick-basics.mp4', size: '212 MB', duration: '11:47' },
-      ] },
-    { name: 'Smart Money Concepts', category: 'Intermediate', price: '$249', students: 8420, status: 'Published',
-      lessons: [{ title: 'Liquidity & Order Blocks', fileName: 'smc-liquidity.mp4', filePath: '/uploads/videos/seed-smc-liquidity.mp4', size: '340 MB', duration: '18:03' }] },
-    { name: 'ICT Masterclass', category: 'Advanced', price: '$399', students: 6910, status: 'Published', lessons: [] },
-    { name: 'Gold (XAUUSD) Trading', category: 'Intermediate', price: '$199', students: 5210, status: 'Published', lessons: [] },
-    { name: 'Funded Account Program', category: 'Advanced', price: '$349', students: 3040, status: 'Draft', lessons: [] },
-    { name: 'Scalping Masterclass', category: 'Advanced', price: '$279', students: 2870, status: 'Published', lessons: [] },
-  ];
-  for (const c of courseSeed) {
-    const existing = await prisma.course.findFirst({ where: { name: c.name } });
-    if (existing) continue;
+  // Courses are monthly batches now, managed entirely by the admin (create + mark
+  // "current batch" from the dashboard) — nothing to seed here.
+  if ((await prisma.course.count()) === 0) {
     await prisma.course.create({
-      data: {
-        name: c.name, category: c.category, price: c.price, students: c.students, status: c.status,
-        lessons: { create: c.lessons },
-      },
+      data: { name: 'July 2026 Batch', category: 'All Levels', price: '$150', status: 'Published', isCurrentBatch: true },
     });
   }
 
