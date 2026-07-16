@@ -43,6 +43,19 @@ const Auth = {
   loginDemo(role) {
     return role === 'admin' ? this.login('admin@fmm.com', 'admin123') : this.login('student@fmm.com', 'student123');
   },
+  async loginWithGoogle(credential) {
+    const res = await fetch(`${API_BASE}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Google Sign-In failed');
+    }
+    const data = await res.json();
+    return this.setSession(data);
+  },
   setSession(data) {
     const session = { token: data.token, ...data.user };
     localStorage.setItem(AUTH_KEY, JSON.stringify(session));

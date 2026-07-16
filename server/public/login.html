@@ -43,11 +43,9 @@
       <p class="auth-error" id="loginError" hidden>Enter a valid email and a password (4+ characters).</p>
       <button type="submit" class="btn btn-gold btn-lg auth-submit">Log In</button>
 
-      <div class="auth-divider"><span>or continue with</span></div>
-      <div class="auth-social">
-        <button type="button" class="btn btn-outline">Google</button>
-        <button type="button" class="btn btn-outline">Facebook</button>
-        <button type="button" class="btn btn-outline">Apple</button>
+      <div class="auth-divider" id="socialDivider" hidden><span>or continue with</span></div>
+      <div class="auth-social" id="socialButtons" hidden>
+        <button type="button" class="btn btn-outline" id="googleSignInBtn">Google</button>
       </div>
 
       <div class="auth-demo">
@@ -90,6 +88,7 @@
 </div>
 
 <script src="js/auth.js?v=2"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <script>
   const tabs = document.querySelectorAll('.auth-tab');
   const panels = { login: document.getElementById('loginForm'), signup: document.getElementById('signupForm') };
@@ -137,6 +136,34 @@
   });
 
   document.getElementById('demoStudentBtn').addEventListener('click', async () => goToDashboard(await Auth.loginDemo('student')));
+
+  // ---- Google Sign-In (only shown once a Client ID is configured server-side) ----
+  (async function initGoogleSignIn() {
+    try {
+      const { clientId } = await (await fetch(`${API_BASE}/auth/google-client-id`)).json();
+      if (!clientId || !window.google) return;
+
+      document.getElementById('socialDivider').hidden = false;
+      document.getElementById('socialButtons').hidden = false;
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async (response) => {
+          try {
+            const session = await Auth.loginWithGoogle(response.credential);
+            goToDashboard(session);
+          } catch (err) {
+            const errorEl = document.getElementById('loginError');
+            errorEl.textContent = err.message;
+            errorEl.hidden = false;
+          }
+        },
+      });
+      document.getElementById('googleSignInBtn').addEventListener('click', () => google.accounts.id.prompt());
+    } catch (err) {
+      // Google Sign-In just stays hidden if this fails (e.g. offline, script blocked).
+    }
+  })();
 
   // If already logged in with a real token, skip straight to dashboard.
   const existing = Auth.getSession();

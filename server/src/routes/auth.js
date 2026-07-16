@@ -1,11 +1,14 @@
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { notifyAdmin } = require('../email');
 
 const router = express.Router();
+const googleClient = process.env.GOOGLE_CLIENT_ID ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID) : null;
 
 function signToken(user) {
   return jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -23,6 +26,45 @@ router.post('/login', async (req, res) => {
 
   const token = signToken(user);
   res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier } });
+});
+
+// Public — lets the frontend know whether Google Sign-In is configured, and with
+// which Client ID (not a secret; safe to expose).
+router.get('/google-client-id', (req, res) => {
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID || null });
+});
+
+router.post('/google', async (req, res) => {
+  const { credential } = req.body;
+  if (!credential) return res.status(400).json({ error: 'Missing Google credential' });
+  if (!googleClient) return res.status(503).json({ error: 'Google Sign-In is not configured yet' });
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID });
+    payload = ticket.getPayload();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid Google credential' });
+  }
+
+  const email = payload.email.toLowerCase();
+  let user = await prisma.user.findUnique({ where: { email } });
+  let isNew = false;
+
+  if (!user) {
+    isNew = true;
+    const passwordHash = await bcrypt.hash(crypto.randomUUID(), 10); // unusable random password — this account only signs in via Google
+    user = await prisma.user.create({
+      data: { email, passwordHash, name: payload.name || email.split('@')[0], role: 'student', status: 'Active' },
+    });
+    notifyAdmin(
+      'New student registration (Google Sign-In)',
+      `<p><strong>${user.name}</strong> (${user.email}) just created an account via Google.</p>`,
+    );
+  }
+
+  const token = signToken(user);
+  res.status(isNew ? 201 : 200).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier } });
 });
 
 router.post('/register', async (req, res) => {
