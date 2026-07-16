@@ -36,7 +36,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: 'Internal server error', detail: err.message, code: err.code });
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 4000;

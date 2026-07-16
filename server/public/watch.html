@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch Course | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=4">
+<style>
+  body{ min-height:100vh; }
+  .watch-shell{ max-width:1100px; margin:0 auto; padding:110px 24px 80px; }
+  .watch-head{ margin-bottom:24px; }
+  .watch-head h1{ font-size:1.6rem; margin-bottom:4px; }
+  .watch-layout{ display:grid; grid-template-columns: 2.2fr 1fr; gap:24px; align-items:start; }
+  .watch-player{ background:#000; border-radius:12px; overflow:hidden; aspect-ratio:16/9; border:1px solid var(--border); }
+  .watch-player iframe{ width:100%; height:100%; border:0; }
+  .watch-player-empty{ height:100%; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.9rem; }
+  .watch-current-title{ margin-top:16px; font-size:1.15rem; }
+  .lesson-panel{ background: var(--card-bg); border:1px solid var(--border); border-radius: var(--radius); padding:18px; }
+  .lesson-panel h3{ font-size:.95rem; margin-bottom:14px; }
+  .lesson-pick{
+    display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; cursor:pointer;
+    border:1px solid transparent; margin-bottom:6px; transition: background .15s ease, border-color .15s ease;
+  }
+  .lesson-pick:hover{ background: rgba(255,255,255,0.04); }
+  .lesson-pick.active{ background: rgba(212,175,55,0.1); border-color: rgba(212,175,55,0.35); }
+  .lesson-pick .num{ width:26px; height:26px; border-radius:50%; background: rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; color:var(--muted); flex-shrink:0; }
+  .lesson-pick.active .num{ background: var(--gold-gradient); color:#1a1305; }
+  .lesson-pick-info strong{ display:block; font-size:.86rem; }
+  .lesson-pick-info span{ font-size:.74rem; color:var(--muted-dim); }
+  .watch-note{ text-align:center; padding:60px 0; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">F</span>
+      <span class="brand-text">Forex Money Machine<em>Academy</em></span>
+    </a>
+    <div class="header-actions">
+      <a href="dashboard-student.html" class="btn btn-ghost">Back to Dashboard</a>
+    </div>
+  </div>
+</header>
+
+<div class="watch-shell">
+  <div class="watch-head">
+    <h1 id="watchCourseName">Loading…</h1>
+  </div>
+  <div id="watchContent">
+    <p class="watch-note">Loading course…</p>
+  </div>
+</div>
+
+<script src="js/auth.js?v=2"></script>
+<script>
+  const session = Auth.requireRole('student');
+  const courseId = new URLSearchParams(location.search).get('courseId');
+
+  async function loadWatch() {
+    if (!courseId) {
+      document.getElementById('watchContent').innerHTML = '<p class="watch-note">No course selected.</p>';
+      return;
+    }
+    try {
+      const data = await apiFetch(`/courses/${courseId}/watch`);
+      document.getElementById('watchCourseName').textContent = data.name;
+
+      if (!data.lessons.length) {
+        document.getElementById('watchContent').innerHTML = '<p class="watch-note">No lessons have been added to this course yet — check back soon.</p>';
+        return;
+      }
+
+      document.getElementById('watchContent').innerHTML = `
+        <div class="watch-layout">
+          <div>
+            <div class="watch-player" id="watchPlayer"></div>
+            <h2 class="watch-current-title" id="watchCurrentTitle"></h2>
+          </div>
+          <div class="lesson-panel">
+            <h3>Lessons (${data.lessons.length})</h3>
+            <div id="lessonPickList"></div>
+          </div>
+        </div>`;
+
+      let activeIndex = 0;
+      function renderPlayer(i) {
+        activeIndex = i;
+        const lesson = data.lessons[i];
+        const player = document.getElementById('watchPlayer');
+        player.innerHTML = lesson.youtubeId
+          ? `<iframe src="https://www.youtube.com/embed/${lesson.youtubeId}" title="${lesson.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+          : `<div class="watch-player-empty">This lesson's video link couldn't be loaded.</div>`;
+        document.getElementById('watchCurrentTitle').textContent = lesson.title;
+        document.querySelectorAll('.lesson-pick').forEach((el, idx) => el.classList.toggle('active', idx === i));
+      }
+
+      document.getElementById('lessonPickList').innerHTML = data.lessons.map((l, i) => `
+        <div class="lesson-pick" data-i="${i}">
+          <span class="num">${i + 1}</span>
+          <div class="lesson-pick-info"><strong>${l.title}</strong>${l.duration !== '—' ? `<span>${l.duration}</span>` : ''}</div>
+        </div>`).join('');
+
+      document.getElementById('lessonPickList').addEventListener('click', (e) => {
+        const pick = e.target.closest('.lesson-pick');
+        if (!pick) return;
+        renderPlayer(Number(pick.dataset.i));
+      });
+
+      renderPlayer(0);
+    } catch (err) {
+      document.getElementById('watchContent').innerHTML = `<p class="watch-note">${err.message}</p>`;
+    }
+  }
+  loadWatch();
+</script>
+</body>
+</html>

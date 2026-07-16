@@ -47,7 +47,7 @@ function courseRow(c) {
       <div class="progress-bar"><span style="width:${c.progress}%"></span></div>
       <span class="progress-pct">${c.progress}% complete ${c.source === 'membership' ? '· via membership' : ''}</span>
     </div>
-    <a href="#" class="btn btn-outline btn-sm">${c.completed ? 'Review' : 'Resume'}</a>
+    <a href="watch.html?courseId=${c.id}" class="btn btn-outline btn-sm">${c.completed ? 'Review' : 'Resume'}</a>
   </div>`;
 }
 

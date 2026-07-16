@@ -58,9 +58,7 @@ model Lesson {
   courseId Int
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   title    String
-  fileName String
-  filePath String
-  size     String
+  videoUrl String // YouTube (unlisted/private) link — no server-side video storage
   duration String @default("—")
 }
 

@@ -233,7 +233,6 @@ table.dash-table{ width:100%; border-collapse:collapse; font-size:.88rem; }
 .lesson-item .lesson-info{ flex:1; min-width:0; }
 .lesson-item .lesson-info strong{ display:block; font-size:.9rem; }
 .lesson-item .lesson-info span{ font-size:.76rem; color: var(--muted-dim); }
-.lesson-video-preview{ width:100%; max-width:360px; border-radius:10px; margin-top:10px; background:#000; }
 .upload-form[data-disabled="true"]{ opacity:.45; pointer-events:none; }
 .upload-form input[type="file"]{
   background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:9px 12px;

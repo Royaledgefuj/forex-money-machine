@@ -169,11 +169,10 @@ function renderCourseContent() {
       <div class="lesson-ic">🎬</div>
       <div class="lesson-info">
         <strong>${l.title}</strong>
-        <span>${l.fileName} · ${l.size} ${l.duration ? '· ' + l.duration : ''}</span>
-        <video class="lesson-video-preview" src="${MEDIA_BASE}${l.filePath}" controls preload="metadata"></video>
+        <span>${l.duration !== '—' ? l.duration + ' · ' : ''}<a href="${l.videoUrl}" target="_blank" rel="noopener">${l.videoUrl}</a></span>
       </div>
       <button class="icon-btn danger" title="Remove lesson" data-remove="${l.id}">🗑</button>
-    </div>`).join('') : '<p class="empty-note">No lessons uploaded yet for this course.</p>';
+    </div>`).join('') : '<p class="empty-note">No lessons added yet for this course.</p>';
 }
 
 document.getElementById('lessonList').addEventListener('click', async (e) => {
@@ -187,35 +186,20 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (selectedCourseIndex === null) return;
   const course = COURSES[selectedCourseIndex];
-  const titleInput = document.getElementById('lessonTitle');
-  const fileInput = document.getElementById('lessonVideo');
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const progressWrap = document.getElementById('uploadProgressWrap');
-  const progressBar = document.getElementById('uploadProgressBar');
-  const progressLabel = document.getElementById('uploadProgressLabel');
+  const title = document.getElementById('lessonTitle').value;
+  const videoUrl = document.getElementById('lessonVideoUrl').value;
+  const duration = document.getElementById('lessonDuration').value;
   const submitBtn = document.getElementById('uploadSubmitBtn');
 
-  progressWrap.hidden = false;
   submitBtn.disabled = true;
-  progressBar.style.width = '30%';
-  progressLabel.textContent = 'Uploading…';
-
-  const formData = new FormData();
-  formData.append('title', titleInput.value);
-  formData.append('video', file);
-
   try {
-    await apiFetch(`/courses/${course.id}/lessons`, { method: 'POST', body: formData });
-    progressBar.style.width = '100%';
-    progressLabel.textContent = 'Uploaded!';
+    await apiFetch(`/courses/${course.id}/lessons`, { method: 'POST', body: JSON.stringify({ title, videoUrl, duration }) });
     await Promise.all([loadCourses(), loadActivity()]);
     e.target.reset();
   } catch (err) {
-    alert('Upload failed: ' + err.message);
+    alert('Could not add lesson: ' + err.message);
   } finally {
-    setTimeout(() => { progressWrap.hidden = true; progressBar.style.width = '0%'; submitBtn.disabled = false; }, 600);
+    submitBtn.disabled = false;
   }
 });
 
