@@ -19,6 +19,8 @@ model User {
   joinedAt       DateTime     @default(now())
   country        String?
   phone          String?
+  telegramId     String?
+  whatsappNumber String?
   signalsAccess  Boolean      @default(false)
   payments       Payment[]
   enrollments    Enrollment[]

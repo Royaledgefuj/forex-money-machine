@@ -421,6 +421,8 @@ async function loadProfile() {
   const me = await apiFetch('/auth/me');
   document.getElementById('profileCountry').value = me.country || '';
   document.getElementById('profilePhone').value = me.phone || '';
+  document.getElementById('profileTelegramId').value = me.telegramId || '';
+  document.getElementById('profileWhatsapp').value = me.whatsappNumber || '';
 }
 loadProfile();
 
@@ -429,7 +431,9 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   const name = document.getElementById('profileName').value;
   const country = document.getElementById('profileCountry').value;
   const phone = document.getElementById('profilePhone').value;
-  await apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify({ name, country, phone }) });
+  const telegramId = document.getElementById('profileTelegramId').value;
+  const whatsappNumber = document.getElementById('profileWhatsapp').value;
+  await apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify({ name, country, phone, telegramId, whatsappNumber }) });
 
   const stored = Auth.getSession();
   if (stored) {
