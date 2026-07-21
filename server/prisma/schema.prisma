@@ -22,12 +22,10 @@ model User {
   telegramId     String?
   whatsappNumber String?
   signalsAccess  Boolean      @default(false)
-  aiTradeConnected Boolean    @default(false)
   payments       Payment[]
   enrollments    Enrollment[]
   signalProofs   SignalProof[]
   certificates   Certificate[]
-  aiTradeRequests AiTradeRequest[]
 }
 
 model Course {
@@ -116,20 +114,6 @@ model SignalProof {
   proofUrl    String
   status      String   @default("Pending") // Pending | Approved | Rejected
   submittedAt DateTime @default(now())
-}
-
-model AiTradeRequest {
-  id            Int      @id @default(autoincrement())
-  userId        Int
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  broker        String   // "PU Prime" | "Exness"
-  accountType   String   @default("Cent / USDC-Cent")
-  accountNumber String
-  amount        String
-  proofUrl      String
-  undertakingAccepted Boolean @default(false)
-  status        String   @default("Pending") // Pending | Approved | Connected | Rejected
-  submittedAt   DateTime @default(now())
 }
 
 model Resource {
