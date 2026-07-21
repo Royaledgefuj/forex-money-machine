@@ -6,15 +6,16 @@ const { logActivity } = require('../activity');
 const { notifyAdmin } = require('../email');
 
 const router = express.Router();
+const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 
 router.get('/plans', requireAuth, (req, res) => {
   res.json(TIERS);
 });
 
 router.post('/request', requireAuth, async (req, res) => {
-  const { tier, method, proofUrl, reference } = req.body;
+  const { tier, method, reference } = req.body;
   if (!['Silver', 'Gold', 'Platinum'].includes(tier)) return res.status(400).json({ error: 'Invalid membership tier' });
-  if (!method || !proofUrl) return res.status(400).json({ error: 'Payment method and proof of payment are required' });
+  if (!method) return res.status(400).json({ error: 'Payment method is required' });
 
   const paymentMethod = await prisma.paymentMethod.findFirst({ where: { name: method, active: true } });
   if (!paymentMethod) return res.status(400).json({ error: 'Invalid payment method' });
@@ -30,7 +31,6 @@ router.post('/request', requireAuth, async (req, res) => {
       student: req.user.name,
       course: `${tier} Membership`,
       method,
-      proofUrl,
       reference: reference || null,
       amount: `$${TIERS[tier].price.toFixed(2)}`,
       status: 'Pending',
@@ -38,10 +38,9 @@ router.post('/request', requireAuth, async (req, res) => {
   });
   await logActivity(`${req.user.name} requested ${tier} membership`);
   notifyAdmin(
-    `New payment proof: ${tier} Membership`,
-    `<p><strong>${req.user.name}</strong> submitted proof of payment for <strong>${tier} Membership</strong> (${payment.amount}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
-     <p><a href="https://www.vrcommercesolutions.com${proofUrl}">View proof screenshot</a></p>
-     <p>Review and approve in the admin dashboard's Payments tab.</p>`,
+    `New payment request: ${tier} Membership`,
+    `<p><strong>${req.user.name}</strong> requested <strong>${tier} Membership</strong> (${payment.amount}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+     <p>They were asked to message you directly on Telegram (${VERIFY_TELEGRAM_URL}) with their payment proof — check for their message, then approve in the admin dashboard's Payments tab.</p>`,
   );
   res.status(201).json(payment);
 });

@@ -29,6 +29,7 @@
       <button class="dash-nav-item" data-panel="membership"><span class="ic">💎</span>Membership</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments &amp; Brokers</button>
       <button class="dash-nav-item" data-panel="signals"><span class="ic">📡</span>Signals</button>
+      <button class="dash-nav-item" data-panel="aitrade"><span class="ic">🤖</span>AI Trade</button>
       <button class="dash-nav-item" data-panel="community"><span class="ic">👥</span>Community</button>
       <button class="dash-nav-item" data-panel="support"><span class="ic">🎧</span>Support</button>
       <button class="dash-nav-item" data-panel="profile"><span class="ic">⚙️</span>Profile &amp; Security</button>
@@ -175,6 +176,14 @@
         </div>
       </section>
 
+      <!-- AI TRADE -->
+      <section class="dash-panel" data-panel="aitrade">
+        <div class="card">
+          <div class="card-head"><h3>AI Trade</h3></div>
+          <div id="aiTradeContent"></div>
+        </div>
+      </section>
+
       <!-- COMMUNITY -->
       <section class="dash-panel" data-panel="community">
         <div class="card">
@@ -249,20 +258,19 @@
         <div class="pay-instructions" id="payInstructions">Select a payment method above.</div>
       </div>
       <div class="form-field full">
-        <label>Upload Payment Screenshot</label>
-        <input type="file" id="payProof" accept="image/*" required>
-      </div>
-      <div class="form-field full">
         <label>Reference / Note (optional)</label>
         <input type="text" id="payReference" placeholder="e.g. transaction ID">
       </div>
+      <div class="form-field full">
+        <p class="mini-note">After paying, send your payment screenshot directly to us on Telegram so we can verify and activate your access: <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a></p>
+      </div>
       <p class="modal-error" id="payError" hidden></p>
-      <div class="form-field full"><button type="submit" class="btn btn-gold" id="paySubmitBtn">Submit for Review</button></div>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="paySubmitBtn">Submit Request</button></div>
     </form>
   </div>
 </div>
 
 <script src="js/auth.js?v=3"></script>
-<script src="js/dashboard-student.js?v=9"></script>
+<script src="js/dashboard-student.js?v=10"></script>
 </body>
 </html>

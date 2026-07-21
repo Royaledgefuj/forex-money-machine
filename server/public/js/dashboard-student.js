@@ -18,7 +18,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Overview', courses: 'My Courses', live: 'Live Classes', certificates: 'Certificates',
   downloads: 'Downloads & Tools', payments: 'Payments & Brokers', membership: 'Membership', signals: 'Signals',
-  community: 'Community', support: 'Support', profile: 'Profile & Security',
+  aitrade: 'AI Trade', community: 'Community', support: 'Support', profile: 'Profile & Security',
 };
 
 function showPanel(key) {
@@ -271,22 +271,14 @@ payModal.addEventListener('click', (e) => { if (e.target === payModal) closePaym
 payForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!currentPaymentRequest) return;
-  const fileInput = document.getElementById('payProof');
-  const file = fileInput.files[0];
-  if (!file) return;
 
   const submitBtn = document.getElementById('paySubmitBtn');
   submitBtn.disabled = true;
   payError.hidden = true;
 
   try {
-    const proofData = new FormData();
-    proofData.append('proof', file);
-    const { url: proofUrl } = await apiFetch('/payments/upload-proof', { method: 'POST', body: proofData });
-
     const body = {
       method: payMethodSelect.value,
-      proofUrl,
       reference: document.getElementById('payReference').value || undefined,
     };
 
@@ -302,7 +294,7 @@ payForm.addEventListener('submit', async (e) => {
 
     await loadPayments();
     closePaymentModal();
-    alert('Payment submitted! An admin will review your proof and approve access shortly.');
+    alert('Request submitted! Message us on Telegram (@Moneymagnet2026) with your payment proof and we\'ll verify and activate your access shortly.');
   } catch (err) {
     payError.textContent = err.message;
     payError.hidden = false;
@@ -326,13 +318,15 @@ const BROKER_OPTIONS = ['Exness', 'PU Prime', 'JustMarkets'];
 
 function renderSignalsForm() {
   return `
-    <p class="mini-note" style="margin-bottom:16px;">Deposit $300 or more with any one of our partner brokers, then upload your proof below. Once verified, we'll unlock our private signals group for you.</p>
+    <p class="mini-note" style="margin-bottom:16px;">Deposit $300 or more with any one of our partner brokers, submit the form below, then message us directly on Telegram with your proof. Once verified, we'll unlock our private signals group for you.</p>
     <form id="signalsForm" class="form-grid">
       <div class="form-field"><label>Broker</label>
         <select id="sigBroker" required>${BROKER_OPTIONS.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
       </div>
       <div class="form-field"><label>Deposit Amount (USD)</label><input type="number" id="sigAmount" min="300" step="1" placeholder="300" required></div>
-      <div class="form-field full"><label>Upload Deposit Proof</label><input type="file" id="sigProof" accept="image/*" required></div>
+      <div class="form-field full">
+        <p class="mini-note">Send your deposit proof to <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram after submitting.</p>
+      </div>
       <p class="modal-error" id="sigError" hidden></p>
       <div class="form-field full"><button type="submit" class="btn btn-gold" id="sigSubmitBtn">Submit for Review</button></div>
     </form>`;
@@ -350,7 +344,7 @@ async function loadSignals() {
   }
 
   if (data.latest && data.latest.status === 'Pending') {
-    el.innerHTML = `<p class="mini-note">⏳ Your ${data.latest.amount} deposit proof (${data.latest.broker}) is pending review. We'll unlock the signals group as soon as it's verified.</p>`;
+    el.innerHTML = `<p class="mini-note">⏳ Your ${data.latest.amount} deposit (${data.latest.broker}) is pending review. Make sure you've messaged us on <a href="${data.verifyUrl}" target="_blank" rel="noopener">Telegram</a> with your proof — we'll unlock the signals group as soon as it's verified.</p>`;
     return;
   }
 
@@ -361,23 +355,17 @@ async function loadSignals() {
 
   document.getElementById('signalsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fileInput = document.getElementById('sigProof');
-    const file = fileInput.files[0];
-    if (!file) return;
     const submitBtn = document.getElementById('sigSubmitBtn');
     const errorEl = document.getElementById('sigError');
     submitBtn.disabled = true;
     errorEl.hidden = true;
     try {
-      const proofData = new FormData();
-      proofData.append('proof', file);
-      const { url: proofUrl } = await apiFetch('/signals/upload-proof', { method: 'POST', body: proofData });
       await apiFetch('/signals/submit', {
         method: 'POST',
-        body: JSON.stringify({ broker: document.getElementById('sigBroker').value, amount: document.getElementById('sigAmount').value, proofUrl }),
+        body: JSON.stringify({ broker: document.getElementById('sigBroker').value, amount: document.getElementById('sigAmount').value }),
       });
       await loadSignals();
-      alert('Proof submitted! We\'ll review it and unlock the signals group shortly.');
+      alert('Submitted! Message us on Telegram (@Moneymagnet2026) with your deposit proof and we\'ll unlock the signals group shortly.');
     } catch (err) {
       errorEl.textContent = err.message;
       errorEl.hidden = false;
@@ -386,6 +374,83 @@ async function loadSignals() {
   });
 }
 loadSignals();
+
+// ================= AI TRADE =================
+const AI_TRADE_BROKERS = ['PU Prime', 'Exness'];
+
+function renderAiTradeForm() {
+  return `
+    <p class="mini-note" style="margin-bottom:16px;">Open a <strong>Cent / USDC-Cent account</strong> with <strong>PU Prime</strong> or <strong>Exness</strong>, deposit a minimum of <strong>$200</strong>, submit the form below, then message us directly on Telegram with your account/deposit proof. Once verified, we'll manually connect your account to our AI Trade system.</p>
+    <form id="aiTradeForm" class="form-grid">
+      <div class="form-field"><label>Broker</label>
+        <select id="atBroker" required>${AI_TRADE_BROKERS.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
+      </div>
+      <div class="form-field"><label>Trading Account Number</label><input type="text" id="atAccountNumber" placeholder="Your Cent / USDC-Cent account #" required></div>
+      <div class="form-field"><label>Deposit Amount (USD)</label><input type="number" id="atAmount" min="200" step="1" placeholder="200" required></div>
+      <div class="form-field full">
+        <label style="display:flex;align-items:flex-start;gap:8px;">
+          <input type="checkbox" id="atUndertaking" required style="width:auto;margin-top:4px;">
+          <span class="mini-note">I understand that forex trading involves substantial risk and that guaranteed profits are never available. I am opening this account and connecting to AI Trade at my own discretion, and I will not hold Forex Money Machine Academy responsible for any trading losses incurred.</span>
+        </label>
+      </div>
+      <div class="form-field full">
+        <p class="mini-note">Send your account/deposit proof to <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram after submitting.</p>
+      </div>
+      <p class="modal-error" id="atError" hidden></p>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="atSubmitBtn">Submit for Review</button></div>
+    </form>`;
+}
+
+async function loadAiTrade() {
+  const data = await apiFetch('/ai-trade/mine');
+  const el = document.getElementById('aiTradeContent');
+
+  if (data.aiTradeConnected) {
+    el.innerHTML = `<p class="mini-note">✅ You're connected! Your account is live in our AI Trade system.</p>`;
+    return;
+  }
+
+  if (data.latest && data.latest.status === 'Pending') {
+    el.innerHTML = `<p class="mini-note">⏳ Your AI Trade request (${data.latest.broker}, ${data.latest.amount}) is pending review. Make sure you've messaged us on <a href="${data.verifyUrl}" target="_blank" rel="noopener">Telegram</a> with your proof.</p>`;
+    return;
+  }
+
+  if (data.latest && data.latest.status === 'Approved') {
+    el.innerHTML = `<p class="mini-note">✅ Your submission has been verified — we're now connecting your account to AI Trade. This can take a little time.</p>`;
+    return;
+  }
+
+  el.innerHTML = renderAiTradeForm();
+  if (data.latest && data.latest.status === 'Rejected') {
+    document.getElementById('aiTradeContent').insertAdjacentHTML('afterbegin', '<p class="modal-error" style="margin-bottom:16px;">Your last submission couldn\'t be verified. Please double-check your account and try again.</p>');
+  }
+
+  document.getElementById('aiTradeForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = document.getElementById('atSubmitBtn');
+    const errorEl = document.getElementById('atError');
+    submitBtn.disabled = true;
+    errorEl.hidden = true;
+    try {
+      await apiFetch('/ai-trade/submit', {
+        method: 'POST',
+        body: JSON.stringify({
+          broker: document.getElementById('atBroker').value,
+          accountNumber: document.getElementById('atAccountNumber').value,
+          amount: document.getElementById('atAmount').value,
+          undertakingAccepted: document.getElementById('atUndertaking').checked,
+        }),
+      });
+      await loadAiTrade();
+      alert('Submitted! Message us on Telegram (@Moneymagnet2026) with your proof and we\'ll connect you to AI Trade shortly.');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      submitBtn.disabled = false;
+    }
+  });
+}
+loadAiTrade();
 
 document.getElementById('brokerAccounts').innerHTML = ['Exness', 'PU Prime', 'JustMarkets'].map((name) => `
   <div class="course-row"><div class="thumb">${name.split(' ').map((w) => w[0]).join('')}</div><div class="course-row-info"><strong>${name}</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Open Account</a></div>`).join('');

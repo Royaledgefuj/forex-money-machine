@@ -1,7 +1,4 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
@@ -10,27 +7,6 @@ const { enrollUserInCurrentBatch, enrollUserInCourse } = require('../enrollment'
 const router = express.Router();
 
 const MEMBERSHIP_TIERS = ['Silver', 'Gold', 'Platinum'];
-
-// Payment-proof screenshots (separate from course video uploads).
-const proofsDir = process.env.UPLOADS_DIR
-  ? path.join(process.env.UPLOADS_DIR, 'payment-proofs')
-  : path.join(__dirname, '..', '..', 'uploads', 'payment-proofs');
-fs.mkdirSync(proofsDir, { recursive: true });
-
-const proofStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, proofsDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`),
-});
-const uploadProof = multer({
-  storage: proofStorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => cb(null, /^image\//.test(file.mimetype)),
-});
-
-router.post('/upload-proof', requireAuth, uploadProof.single('proof'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'A valid image file is required' });
-  res.status(201).json({ url: `/uploads/payment-proofs/${req.file.filename}` });
-});
 
 router.get('/', requireAuth, async (req, res) => {
   res.json(await prisma.payment.findMany({ orderBy: { date: 'desc' } }));

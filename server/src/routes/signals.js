@@ -1,7 +1,4 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
@@ -12,26 +9,7 @@ const router = express.Router();
 const VALID_BROKERS = ['Exness', 'PU Prime', 'JustMarkets'];
 const MIN_DEPOSIT = 300;
 const SIGNALS_CHANNEL_URL = 'https://t.me/+Ruf7kxdQvhNlMDRk';
-
-const proofsDir = process.env.UPLOADS_DIR
-  ? path.join(process.env.UPLOADS_DIR, 'deposit-proofs')
-  : path.join(__dirname, '..', '..', 'uploads', 'deposit-proofs');
-fs.mkdirSync(proofsDir, { recursive: true });
-
-const proofStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, proofsDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`),
-});
-const uploadProof = multer({
-  storage: proofStorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => cb(null, /^image\//.test(file.mimetype)),
-});
-
-router.post('/upload-proof', requireAuth, uploadProof.single('proof'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'A valid image file is required' });
-  res.status(201).json({ url: `/uploads/deposit-proofs/${req.file.filename}` });
-});
+const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 
 router.get('/mine', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
@@ -39,14 +17,14 @@ router.get('/mine', requireAuth, async (req, res) => {
   res.json({
     signalsAccess: user.signalsAccess,
     channelUrl: user.signalsAccess ? SIGNALS_CHANNEL_URL : null,
+    verifyUrl: VERIFY_TELEGRAM_URL,
     latest,
   });
 });
 
 router.post('/submit', requireAuth, async (req, res) => {
-  const { broker, amount, proofUrl } = req.body;
+  const { broker, amount } = req.body;
   if (!VALID_BROKERS.includes(broker)) return res.status(400).json({ error: 'Invalid broker' });
-  if (!proofUrl) return res.status(400).json({ error: 'Proof of deposit is required' });
   const numericAmount = Number(amount);
   if (!numericAmount || numericAmount < MIN_DEPOSIT) return res.status(400).json({ error: `Minimum deposit is $${MIN_DEPOSIT}` });
 
@@ -57,14 +35,13 @@ router.post('/submit', requireAuth, async (req, res) => {
   if (existingPending) return res.status(409).json({ error: 'You already have a submission pending review' });
 
   const proof = await prisma.signalProof.create({
-    data: { userId: req.user.id, broker, amount: `$${numericAmount.toFixed(2)}`, proofUrl, status: 'Pending' },
+    data: { userId: req.user.id, broker, amount: `$${numericAmount.toFixed(2)}`, status: 'Pending' },
   });
-  await logActivity(`${req.user.name} submitted a $${numericAmount} deposit proof (${broker}) for signals access`);
+  await logActivity(`${req.user.name} submitted a $${numericAmount} deposit (${broker}) for signals access`);
   notifyAdmin(
-    'New signals deposit proof submitted',
-    `<p><strong>${req.user.name}</strong> (${req.user.email}) submitted proof of a ${proof.amount} deposit with <strong>${broker}</strong> for signals access.</p>
-     <p><a href="https://www.vrcommercesolutions.com${proofUrl}">View proof screenshot</a></p>
-     <p>Review and approve in the admin dashboard's Signals tab.</p>`,
+    'New signals verification request',
+    `<p><strong>${req.user.name}</strong> (${req.user.email}) says they deposited ${proof.amount} with <strong>${broker}</strong> for signals access.</p>
+     <p>They were asked to message you directly on Telegram (${VERIFY_TELEGRAM_URL}) with proof — check for their message, then approve in the admin dashboard's Signals tab.</p>`,
   );
   res.status(201).json(proof);
 });

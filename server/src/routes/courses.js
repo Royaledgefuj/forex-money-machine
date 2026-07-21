@@ -88,10 +88,12 @@ router.get('/:id/watch', requireAuth, async (req, res) => {
 });
 
 // ---- Individual course purchase (alternative to membership) ----
+const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
+
 router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
-  const { method, proofUrl, reference } = req.body;
-  if (!method || !proofUrl) return res.status(400).json({ error: 'Payment method and proof of payment are required' });
+  const { method, reference } = req.body;
+  if (!method) return res.status(400).json({ error: 'Payment method is required' });
 
   const course = await prisma.course.findUnique({ where: { id } });
   if (!course || course.status !== 'Published') return res.status(404).json({ error: 'Course not found' });
@@ -108,15 +110,14 @@ router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const payment = await prisma.payment.create({
     data: {
       userId: req.user.id, courseId: id, student: req.user.name, course: course.name,
-      method, proofUrl, reference: reference || null, amount: course.price, status: 'Pending',
+      method, reference: reference || null, amount: course.price, status: 'Pending',
     },
   });
   await logActivity(`${req.user.name} requested access to "${course.name}"`);
   notifyAdmin(
-    `New payment proof: ${course.name}`,
-    `<p><strong>${req.user.name}</strong> submitted proof of payment for <strong>${course.name}</strong> (${course.price}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
-     <p><a href="https://www.vrcommercesolutions.com${proofUrl}">View proof screenshot</a></p>
-     <p>Review and approve in the admin dashboard's Payments tab.</p>`,
+    `New payment request: ${course.name}`,
+    `<p><strong>${req.user.name}</strong> requested <strong>${course.name}</strong> (${course.price}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+     <p>They were asked to message you directly on Telegram (${VERIFY_TELEGRAM_URL}) with their payment proof — check for their message, then approve in the admin dashboard's Payments tab.</p>`,
   );
   res.status(201).json(payment);
 });
