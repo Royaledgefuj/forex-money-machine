@@ -113,7 +113,7 @@ model SignalProof {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   broker      String
   amount      String
-  proofUrl    String
+  proofUrl    String?
   status      String   @default("Pending") // Pending | Approved | Rejected
   submittedAt DateTime @default(now())
 }
@@ -126,7 +126,6 @@ model AiTradeRequest {
   accountType   String   @default("Cent / USDC-Cent")
   accountNumber String
   amount        String
-  proofUrl      String
   undertakingAccepted Boolean @default(false)
   status        String   @default("Pending") // Pending | Approved | Connected | Rejected
   submittedAt   DateTime @default(now())
