@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', copytrade: 'Copy Trade',
+  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade',
   brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
@@ -469,12 +469,12 @@ document.getElementById('signalRows').addEventListener('click', async (e) => {
   await Promise.all([loadSignals(), loadActivity()]);
 });
 
-// ================= COPY TRADE =================
-let COPY_TRADE_REQUESTS = [];
-async function loadCopyTrade() {
-  COPY_TRADE_REQUESTS = await apiFetch('/copy-trade');
+// ================= AI TRADE =================
+let AI_TRADE_REQUESTS = [];
+async function loadAiTrade() {
+  AI_TRADE_REQUESTS = await apiFetch('/ai-trade');
   const map = { Connected: 'pill-success', Approved: 'pill-muted', Pending: 'pill-warn', Rejected: 'pill-danger' };
-  document.getElementById('copyTradeRows').innerHTML = COPY_TRADE_REQUESTS.length ? COPY_TRADE_REQUESTS.map((r) => `
+  document.getElementById('aiTradeRows').innerHTML = AI_TRADE_REQUESTS.length ? AI_TRADE_REQUESTS.map((r) => `
     <tr><td>${r.user.name}</td><td>${r.broker}</td><td>${r.accountNumber}</td><td>${r.amount}</td>
       <td><a href="${MEDIA_BASE}${r.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a></td>
       <td><span class="badge-pill ${map[r.status]}">${r.status}</span></td>
@@ -483,23 +483,23 @@ async function loadCopyTrade() {
           <button class="icon-btn" title="Approve" data-action="approve" data-id="${r.id}">✔</button>
           <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${r.id}">✕</button>` : ''}
         ${r.status === 'Approved' ? `
-          <button class="icon-btn" title="Mark Connected" data-action="connect" data-id="${r.id}">🔗</button>
+          <button class="icon-btn" title="Mark Connected" data-action="connect" data-id="${r.id}">🤖</button>
           <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${r.id}">✕</button>` : ''}
         <button class="icon-btn danger" title="Delete" data-action="delete" data-id="${r.id}">🗑</button>
       </div></td></tr>`).join('')
-    : '<tr><td colspan="7"><p class="empty-note">No copy trade requests yet.</p></td></tr>';
+    : '<tr><td colspan="7"><p class="empty-note">No AI Trade requests yet.</p></td></tr>';
 }
-document.getElementById('copyTradeRows').addEventListener('click', async (e) => {
+document.getElementById('aiTradeRows').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
   if (btn.dataset.action === 'delete') {
     if (!confirm('Delete this request?')) return;
-    await apiFetch(`/copy-trade/${btn.dataset.id}`, { method: 'DELETE' });
+    await apiFetch(`/ai-trade/${btn.dataset.id}`, { method: 'DELETE' });
   } else {
     const status = { approve: 'Approved', connect: 'Connected', reject: 'Rejected' }[btn.dataset.action];
-    await apiFetch(`/copy-trade/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    await apiFetch(`/ai-trade/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
   }
-  await Promise.all([loadCopyTrade(), loadActivity()]);
+  await Promise.all([loadAiTrade(), loadActivity()]);
 });
 
 // ================= BROKERS =================
@@ -604,7 +604,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadCopyTrade(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

@@ -22,12 +22,12 @@ model User {
   telegramId     String?
   whatsappNumber String?
   signalsAccess  Boolean      @default(false)
-  copyTradeConnected Boolean  @default(false)
+  aiTradeConnected Boolean    @default(false)
   payments       Payment[]
   enrollments    Enrollment[]
   signalProofs   SignalProof[]
   certificates   Certificate[]
-  copyTradeRequests CopyTradeRequest[]
+  aiTradeRequests AiTradeRequest[]
 }
 
 model Course {
@@ -118,7 +118,7 @@ model SignalProof {
   submittedAt DateTime @default(now())
 }
 
-model CopyTradeRequest {
+model AiTradeRequest {
   id            Int      @id @default(autoincrement())
   userId        Int
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
