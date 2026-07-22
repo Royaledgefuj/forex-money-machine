@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="fmmBg" x1="15" y1="10" x2="85" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#12296B"/>
+      <stop offset="100%" stop-color="#04060B"/>
+    </linearGradient>
+    <linearGradient id="fmmGold" x1="20" y1="15" x2="80" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F3D889"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#9C7A1E"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="47" fill="url(#fmmBg)" stroke="url(#fmmGold)" stroke-width="3"/>
+  <line x1="28" y1="68" x2="66" y2="28" stroke="url(#fmmGold)" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="80,20 66,25 74,33" fill="url(#fmmGold)"/>
+  <rect x="40" y="30" width="8" height="42" rx="1.5" fill="url(#fmmGold)"/>
+  <rect x="40" y="30" width="22" height="8" rx="1.5" fill="url(#fmmGold)"/>
+  <rect x="40" y="48" width="17" height="8" rx="1.5" fill="url(#fmmGold)"/>
+</svg>
