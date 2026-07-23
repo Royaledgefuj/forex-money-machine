@@ -14,7 +14,7 @@ router.get('/plans', requireAuth, (req, res) => {
 
 router.post('/request', requireAuth, async (req, res) => {
   const { tier, method, reference } = req.body;
-  if (!['Silver', 'Gold', 'Platinum'].includes(tier)) return res.status(400).json({ error: 'Invalid membership tier' });
+  if (tier !== 'Community') return res.status(400).json({ error: 'Invalid membership tier' });
   if (!method) return res.status(400).json({ error: 'Payment method is required' });
 
   const paymentMethod = await prisma.paymentMethod.findFirst({ where: { name: method, active: true } });

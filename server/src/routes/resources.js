@@ -8,7 +8,7 @@ const { logActivity } = require('../activity');
 
 const router = express.Router();
 
-const VALID_TIERS = ['Silver', 'Gold', 'Platinum'];
+const VALID_TIERS = ['Community'];
 
 // Indicators, EAs, templates and spreadsheets come in many formats (.ex4, .ex5, .mq4,
 // .tpl, .xlsx, .pdf, .zip...) so uploads accept any file type, unlike the image-only
@@ -30,7 +30,7 @@ router.get('/', requireAuth, async (req, res) => {
 
 router.post('/', requireAuth, requireAdmin, upload.single('file'), async (req, res) => {
   const { name, type, tier, version } = req.body;
-  if (!name || !type || !VALID_TIERS.includes(tier)) return res.status(400).json({ error: 'Name, type and a valid tier (Silver/Gold/Platinum) are required' });
+  if (!name || !type || !VALID_TIERS.includes(tier)) return res.status(400).json({ error: 'Name, type and a valid tier (Community) are required' });
   if (!req.file) return res.status(400).json({ error: 'A file is required' });
 
   const resource = await prisma.resource.create({

@@ -1,6 +1,6 @@
 const prisma = require('./prisma');
 
-const PAID_TIERS = ['Silver', 'Gold', 'Platinum'];
+const PAID_TIERS = ['Community'];
 
 // Grant a single student access to a single course (used for individual course purchases).
 async function enrollUserInCourse(userId, courseId, source = 'purchase') {

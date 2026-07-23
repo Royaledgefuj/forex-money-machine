@@ -14,7 +14,7 @@ model User {
   name           String
   role           String       // "admin" | "student"
   status         String       @default("Active") // Active | Pending | Suspended
-  membershipTier String       @default("Free") // Free | Silver | Gold | Platinum
+  membershipTier String       @default("Free") // Free | Community
   coursesCount   Int          @default(0)
   joinedAt       DateTime     @default(now())
   country        String?

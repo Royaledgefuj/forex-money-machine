@@ -6,7 +6,7 @@ const { enrollUserInCurrentBatch, enrollUserInCourse } = require('../enrollment'
 
 const router = express.Router();
 
-const MEMBERSHIP_TIERS = ['Silver', 'Gold', 'Platinum'];
+const MEMBERSHIP_TIERS = ['Community'];
 
 router.get('/', requireAuth, async (req, res) => {
   res.json(await prisma.payment.findMany({ orderBy: { date: 'desc' } }));
@@ -22,9 +22,10 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (status === 'Paid' && payment.userId) {
     const tier = MEMBERSHIP_TIERS.find((t) => payment.course === `${t} Membership`);
     if (tier) {
-      await prisma.user.update({ where: { id: payment.userId }, data: { membershipTier: tier } });
+      // Community membership is all-access: unlocks tools, live classes, signals,
+      // and the current batch (which rolls forward automatically each month).
+      await prisma.user.update({ where: { id: payment.userId }, data: { membershipTier: tier, signalsAccess: true } });
       await logActivity(`Upgraded ${payment.student} to ${tier} membership`);
-      // Membership tracks whichever batch is currently active, not a permanent back-catalog.
       await enrollUserInCurrentBatch(payment.userId, 'membership');
     } else if (payment.courseId) {
       await enrollUserInCourse(payment.userId, payment.courseId, 'purchase');

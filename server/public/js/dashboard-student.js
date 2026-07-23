@@ -65,7 +65,7 @@ async function loadEnrollments() {
     ? data.notAccessible.map((c) => `
     <div class="course-row">
       <div class="thumb">${c.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div>
-      <div class="course-row-info"><strong>${c.name}</strong><span class="progress-pct">${c.price} · or included with Silver+ membership</span></div>
+      <div class="course-row-info"><strong>${c.name}</strong><span class="progress-pct">${c.price} · or included with Community membership</span></div>
       <button class="btn btn-gold btn-sm" data-buy-course="${c.id}" data-buy-name="${c.name}" data-buy-amount="${c.price}">Enroll</button>
     </div>`).join('')
     : '<p class="empty-note">You have access to every course. 🎉</p>';
@@ -77,18 +77,18 @@ document.getElementById('courseRecommended').addEventListener('click', (e) => {
   openPaymentModal({ kind: 'course', courseId: btn.dataset.buyCourse, name: btn.dataset.buyName, amount: btn.dataset.buyAmount });
 });
 
-// Any paid tier (Silver/Gold/Platinum) unlocks all live classes; Free members see them locked.
+// The Community membership unlocks all live classes; Free members see them locked.
 function liveRow(l, unlocked) {
   return `<div class="list-item"><span class="list-dot"></span><div><strong>${l.title}</strong><span>${l.when} · ${l.platform}</span></div>
     ${unlocked
       ? '<span class="badge-pill pill-success">Unlocked</span>'
-      : '<button class="btn btn-outline btn-sm" data-upgrade-tier="Silver">Members Only</button>'}
+      : '<button class="btn btn-outline btn-sm" data-upgrade-tier="Community">Members Only</button>'}
   </div>`;
 }
 
 async function loadLiveClasses() {
   const classes = await apiFetch('/live-classes');
-  const unlocked = tierRank(session.membershipTier || 'Free') >= tierRank('Silver');
+  const unlocked = tierRank(session.membershipTier || 'Free') >= tierRank('Community');
   document.getElementById('overviewLive').innerHTML = classes.length
     ? classes.slice(0, 2).map((l) => liveRow(l, unlocked)).join('')
     : '<p class="empty-note">No live classes scheduled right now.</p>';
@@ -155,17 +155,20 @@ async function renderDownloads() {
     name: r.name, type: r.type, version: r.version, size: r.size, tier: r.tier, filePath: r.filePath,
   })));
 
+  const isMember = tierRank(myTier) >= tierRank('Community');
   document.getElementById('downloadList').innerHTML = all.map((d) => {
-    const unlocked = tierRank(myTier) >= tierRank(d.tier);
+    const isFree = d.tier === 'Free';
+    const label = isFree ? 'Free' : 'Community';
+    const unlocked = isFree || isMember;
     return `
     <div class="download-tile">
-      <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill ${d.tier === 'Free' ? 'pill-success' : 'pill-warn'}">${d.tier}</span></div>
+      <div class="dt-top"><h4>${d.name}</h4><span class="badge-pill ${isFree ? 'pill-success' : 'pill-warn'}">${label}</span></div>
       <p class="meta">${d.type} · ${d.size} · ${d.version}</p>
       ${d.href
         ? `<a href="${d.href}" class="btn btn-gold btn-sm">Open</a>`
         : unlocked
           ? `<a href="${MEDIA_BASE}${d.filePath}" class="btn btn-gold btn-sm" download>Download</a>`
-          : `<button class="btn btn-outline btn-sm" data-upgrade-tier="${d.tier}">🔒 Requires ${d.tier}</button>`}
+          : `<button class="btn btn-outline btn-sm" data-upgrade-tier="Community">🔒 Requires Community</button>`}
     </div>`;
   }).join('');
 }
@@ -177,45 +180,49 @@ document.getElementById('downloadList').addEventListener('click', (e) => {
 });
 
 // ================= MEMBERSHIP =================
-const PLAN_FEATURES = {
-  Silver: ['Indicators (TradingView, MT4, MT5)', 'Chart templates', 'Course access & live classes (already included)'],
-  Gold: ['Everything in Silver', 'Trading Journal', 'Excel toolkit sheets'],
-  Platinum: ['Everything in Gold', 'Expert Advisors', 'All future new indicators & strategies', 'Lifetime access — one-time payment'],
-};
+const VIP_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 let pendingMembershipRequests = [];
 
 function renderMembership() {
   const myTier = (session && session.membershipTier) || 'Free';
-  document.getElementById('currentTierLabel').textContent = myTier;
+  document.getElementById('currentTierLabel').textContent = myTier === 'Community' ? 'Community' : 'Free';
 
   const pending = pendingMembershipRequests[0];
   document.getElementById('pendingRequestNote').innerHTML = pending
     ? `<div class="card"><p class="mini-note">⏳ Your request for <strong>${pending.course}</strong> is pending admin approval.</p></div>`
     : '';
 
-  document.getElementById('membershipPlans').innerHTML = ['Silver', 'Gold', 'Platinum'].map((tier) => {
-    const price = MEMBERSHIP_TIERS[tier].price;
-    const already = tierRank(myTier) >= tierRank(tier);
-    const hasPending = pendingMembershipRequests.some((p) => p.course === `${tier} Membership`);
-    let action;
-    if (already) action = '<button class="btn btn-outline btn-sm" disabled>Current Plan</button>';
-    else if (hasPending) action = '<button class="btn btn-outline btn-sm" disabled>Request Pending</button>';
-    else action = `<button class="btn btn-gold btn-sm" data-request-tier="${tier}">Request Upgrade</button>`;
+  const isMember = myTier === 'Community';
+  const hasPending = pendingMembershipRequests.some((p) => p.course === 'Community Membership');
+  let communityAction;
+  if (isMember) communityAction = '<button class="btn btn-outline btn-sm" disabled>Current Plan</button>';
+  else if (hasPending) communityAction = '<button class="btn btn-outline btn-sm" disabled>Request Pending</button>';
+  else communityAction = '<button class="btn btn-gold btn-sm" data-request-tier="Community">Join Community</button>';
 
-    return `
+  document.getElementById('membershipPlans').innerHTML = `
     <div class="download-tile">
-      <div class="dt-top"><h4>${tier}</h4><span class="badge-pill pill-warn">$${price}${tier === 'Platinum' ? ' lifetime' : ''}</span></div>
-      <p class="meta">${PLAN_FEATURES[tier].join(' · ')}</p>
-      ${action}
+      <div class="dt-top"><h4>Community Membership</h4><span class="badge-pill pill-warn">$10 / month</span></div>
+      <p class="meta">Market analysis · Priority support · Trading signals · All indicators &amp; tools · Live classes &amp; course access</p>
+      ${communityAction}
+    </div>
+    <div class="download-tile">
+      <div class="dt-top"><h4>Trading Course</h4><span class="badge-pill pill-warn">$150 one-time</span></div>
+      <p class="meta">Full monthly batch course &amp; certification · Or $75 upfront + $10/month for ongoing course &amp; support</p>
+      <button class="btn btn-gold btn-sm" data-goto-courses>View Course</button>
+    </div>
+    <div class="download-tile">
+      <div class="dt-top"><h4>VIP Coaching</h4><span class="badge-pill pill-warn">$100 / hour</span></div>
+      <p class="meta">1-on-1 mindset &amp; psychology coaching · $150 package available</p>
+      <a href="${VIP_TELEGRAM_URL}" target="_blank" rel="noopener" class="btn btn-gold btn-sm">Book on Telegram</a>
     </div>`;
-  }).join('');
 }
 
 document.getElementById('membershipPlans').addEventListener('click', (e) => {
+  const gotoCourses = e.target.closest('button[data-goto-courses]');
+  if (gotoCourses) { showPanel('courses'); return; }
   const btn = e.target.closest('button[data-request-tier]');
   if (!btn) return;
-  const tier = btn.dataset.requestTier;
-  openPaymentModal({ kind: 'membership', tier, name: `${tier} Membership`, amount: `$${MEMBERSHIP_TIERS[tier].price.toFixed(2)}` });
+  openPaymentModal({ kind: 'membership', tier: 'Community', name: 'Community Membership', amount: `$${MEMBERSHIP_TIERS.Community.price.toFixed(2)}` });
 });
 
 async function loadPendingMembershipRequests() {

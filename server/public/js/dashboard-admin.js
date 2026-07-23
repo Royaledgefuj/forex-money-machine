@@ -53,7 +53,7 @@ function statusPill(status) {
 async function loadStudents(filter = '') {
   const students = await apiFetch('/students');
   const rows = students.filter((s) => s.name.toLowerCase().includes(filter.toLowerCase()) || s.email.toLowerCase().includes(filter.toLowerCase()));
-  const tierPillClass = { Free: 'pill-muted', Silver: 'pill-muted', Gold: 'pill-warn', Platinum: 'pill-success' };
+  const tierPillClass = { Free: 'pill-muted', Community: 'pill-success' };
   document.getElementById('studentRows').innerHTML = rows.map((s) => `
     <tr>
       <td><div class="table-user"><div class="avatar">${initials(s.name)}</div><div><strong>${s.name}</strong><br><span class="mini-note">${s.email}</span></div></div></td>
@@ -78,9 +78,9 @@ document.getElementById('studentRows').addEventListener('click', async (e) => {
   if (action === 'approve') await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'Active' }) });
   if (action === 'suspend') await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'Suspended' }) });
   if (action === 'tier') {
-    const tier = prompt('Set membership tier (Free, Silver, Gold, Platinum):');
+    const tier = prompt('Set membership tier (Free or Community):');
     if (!tier) return;
-    if (!['Free', 'Silver', 'Gold', 'Platinum'].includes(tier)) return alert('Must be exactly: Free, Silver, Gold, or Platinum');
+    if (!['Free', 'Community'].includes(tier)) return alert('Must be exactly: Free or Community');
     await apiFetch(`/students/${id}`, { method: 'PATCH', body: JSON.stringify({ membershipTier: tier }) });
   }
   if (action === 'delete') {

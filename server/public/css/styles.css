@@ -263,6 +263,7 @@ p{ margin:0 0 1em; color: var(--muted); }
 .tier-silver{ background: rgba(192,197,206,0.15); color:#c7ccd6; border:1px solid rgba(192,197,206,0.35); }
 .tier-gold{ background: rgba(212,175,55,0.15); color: var(--gold-light); border:1px solid rgba(212,175,55,0.35); }
 .tier-platinum{ background: rgba(147,112,219,0.15); color:#b9a4ec; border:1px solid rgba(147,112,219,0.35); }
+.tier-community{ background: rgba(212,175,55,0.15); color: var(--gold-light); border:1px solid rgba(212,175,55,0.35); }
 
 /* Membership plans */
 .membership{ background: linear-gradient(180deg, var(--black-soft), var(--black)); }

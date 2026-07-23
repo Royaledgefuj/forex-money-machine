@@ -21,7 +21,7 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
     data.status = status;
   }
   if (membershipTier !== undefined) {
-    if (!['Free', 'Silver', 'Gold', 'Platinum'].includes(membershipTier)) return res.status(400).json({ error: 'Invalid membership tier' });
+    if (!['Free', 'Community'].includes(membershipTier)) return res.status(400).json({ error: 'Invalid membership tier' });
     data.membershipTier = membershipTier;
   }
   if (signalsAccess !== undefined) data.signalsAccess = !!signalsAccess;

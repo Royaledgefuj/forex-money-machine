@@ -4,6 +4,13 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
+  // One-time migration: the old Silver/Gold/Platinum tiers are collapsed into a
+  // single "Community" membership. Idempotent — after the first run nothing matches.
+  await prisma.user.updateMany({
+    where: { membershipTier: { in: ['Silver', 'Gold', 'Platinum'] } },
+    data: { membershipTier: 'Community' },
+  });
+
   const studentHash = await bcrypt.hash('student123', 10);
 
   await prisma.user.upsert({
