@@ -320,80 +320,52 @@ async function loadPayments() {
 }
 loadPayments();
 
-// ================= SIGNALS =================
-const BROKER_OPTIONS = ['Exness', 'PU Prime', 'JustMarkets'];
-
-function renderSignalsForm() {
-  return `
-    <p class="mini-note" style="margin-bottom:16px;">Deposit $300 or more with any one of our partner brokers, submit the form below, then message us directly on Telegram with your proof. Once verified, we'll unlock our private signals group for you.</p>
-    <form id="signalsForm" class="form-grid">
-      <div class="form-field"><label>Broker</label>
-        <select id="sigBroker" required>${BROKER_OPTIONS.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
-      </div>
-      <div class="form-field"><label>Deposit Amount (USD)</label><input type="number" id="sigAmount" min="300" step="1" placeholder="300" required></div>
-      <div class="form-field full">
-        <p class="mini-note">Send your deposit proof to <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram after submitting.</p>
-      </div>
-      <p class="modal-error" id="sigError" hidden></p>
-      <div class="form-field full"><button type="submit" class="btn btn-gold" id="sigSubmitBtn">Submit for Review</button></div>
-    </form>`;
-}
-
+// ================= SIGNALS (monthly subscription) =================
 async function loadSignals() {
   const data = await apiFetch('/signals/mine');
   const el = document.getElementById('signalsContent');
 
-  if (data.signalsAccess) {
+  if (data.active) {
+    const expiry = data.expiresAt ? new Date(data.expiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
     el.innerHTML = `
-      <p class="mini-note" style="margin-bottom:16px;">✅ Verified — you're in! Tap below to join the private signals group.</p>
+      <div class="stat-card" style="margin-bottom:16px;">
+        <span class="num text-gold">${data.daysRemaining} day${data.daysRemaining === 1 ? '' : 's'} left</span>
+        <span class="label">Signals subscription active · renews ${expiry}</span>
+      </div>
+      <p class="mini-note" style="margin-bottom:16px;">✅ You're in! Tap below to open the private signals group. Renew each month (with your Community subscription) to keep access.</p>
       <a href="${data.channelUrl}" target="_blank" rel="noopener" class="btn btn-gold">Join Signals Group</a>`;
     return;
   }
 
-  if (data.latest && data.latest.status === 'Pending') {
-    el.innerHTML = `<p class="mini-note">⏳ Your ${data.latest.amount} deposit (${data.latest.broker}) is pending review. Make sure you've messaged us on <a href="${data.verifyUrl}" target="_blank" rel="noopener">Telegram</a> with your proof — we'll unlock the signals group as soon as it's verified.</p>`;
-    return;
-  }
+  el.innerHTML = `
+    <p class="mini-note" style="margin-bottom:16px;">Live trading signals are included with your <strong>Community membership</strong> ($10/month) — access runs for 30 days per subscription payment. To get started:</p>
+    <ol class="signals-steps" style="margin:0 0 18px 20px; color:var(--muted); font-size:.9rem; line-height:1.9;">
+      <li>Open an account with any of our <a href="index.html#brokers" target="_blank" rel="noopener">partner brokers</a> using our link.</li>
+      <li>Subscribe to <a href="#" data-goto-membership>Community membership</a> ($10/month).</li>
+      <li>Message us on Telegram — we'll verify and add you to the private signals group.</li>
+    </ol>
+    <a href="${data.verifyUrl}" target="_blank" rel="noopener" class="btn btn-gold">Message Us on Telegram</a>`;
 
-  el.innerHTML = renderSignalsForm();
-  if (data.latest && data.latest.status === 'Rejected') {
-    document.getElementById('signalsContent').insertAdjacentHTML('afterbegin', '<p class="modal-error" style="margin-bottom:16px;">Your last submission couldn\'t be verified. Please double-check the deposit and try again.</p>');
-  }
-
-  document.getElementById('signalsForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = document.getElementById('sigSubmitBtn');
-    const errorEl = document.getElementById('sigError');
-    submitBtn.disabled = true;
-    errorEl.hidden = true;
-    try {
-      await apiFetch('/signals/submit', {
-        method: 'POST',
-        body: JSON.stringify({ broker: document.getElementById('sigBroker').value, amount: document.getElementById('sigAmount').value }),
-      });
-      await loadSignals();
-      alert('Submitted! Message us on Telegram (@Moneymagnet2026) with your deposit proof and we\'ll unlock the signals group shortly.');
-    } catch (err) {
-      errorEl.textContent = err.message;
-      errorEl.hidden = false;
-      submitBtn.disabled = false;
-    }
-  });
+  const gotoMembership = el.querySelector('[data-goto-membership]');
+  if (gotoMembership) gotoMembership.addEventListener('click', (e) => { e.preventDefault(); showPanel('membership'); });
 }
 loadSignals();
 
 // ================= AI TRADE =================
-const AI_TRADE_BROKERS = ['PU Prime', 'Exness'];
+const AI_TRADE_BROKERS = ['PU Prime'];
 
 function renderAiTradeForm() {
   return `
-    <p class="mini-note" style="margin-bottom:16px;">Open a <strong>Cent / USDC-Cent account</strong> with <strong>PU Prime</strong> or <strong>Exness</strong>, deposit a minimum of <strong>$200</strong>, submit the form below, then message us directly on Telegram with your account/deposit proof. Once verified, we'll manually connect your account to our AI Trade system.</p>
+    <p class="mini-note" style="margin-bottom:16px;">Open a <strong>Cent / USDC-Cent account</strong> with <strong>PU Prime</strong> using our link, deposit a minimum of <strong>$200 USDC</strong>, submit the form below, then message us on Telegram — we'll verify and show you how to link your account to our AI Trade system.</p>
+    <div class="form-field full" style="margin-bottom:16px;">
+      <a href="https://www.puprime.partners/forex-trading-account/?affid=NzM4OTQ1Mw==" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-sm">Open PU Prime Account</a>
+    </div>
     <form id="aiTradeForm" class="form-grid">
       <div class="form-field"><label>Broker</label>
         <select id="atBroker" required>${AI_TRADE_BROKERS.map((b) => `<option value="${b}">${b}</option>`).join('')}</select>
       </div>
       <div class="form-field"><label>Trading Account Number</label><input type="text" id="atAccountNumber" placeholder="Your Cent / USDC-Cent account #" required></div>
-      <div class="form-field"><label>Deposit Amount (USD)</label><input type="number" id="atAmount" min="200" step="1" placeholder="200" required></div>
+      <div class="form-field"><label>Deposit Amount (USDC)</label><input type="number" id="atAmount" min="200" step="1" placeholder="200" required></div>
       <div class="form-field full">
         <label style="display:flex;align-items:flex-start;gap:8px;">
           <input type="checkbox" id="atUndertaking" required style="width:auto;margin-top:4px;">
@@ -401,7 +373,7 @@ function renderAiTradeForm() {
         </label>
       </div>
       <div class="form-field full">
-        <p class="mini-note">Send your account/deposit proof to <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram after submitting.</p>
+        <p class="mini-note">After submitting, message <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram with your account &amp; deposit proof — we'll show you how to link.</p>
       </div>
       <p class="modal-error" id="atError" hidden></p>
       <div class="form-field full"><button type="submit" class="btn btn-gold" id="atSubmitBtn">Submit for Review</button></div>

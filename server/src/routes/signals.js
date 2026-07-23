@@ -2,78 +2,70 @@ const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
-const { notifyAdmin } = require('../email');
 
 const router = express.Router();
 
-const VALID_BROKERS = ['Exness', 'PU Prime', 'JustMarkets'];
-const MIN_DEPOSIT = 300;
 const SIGNALS_CHANNEL_URL = 'https://t.me/+Ruf7kxdQvhNlMDRk';
 const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
+const PERIOD_DAYS = 30;
 
+function daysRemaining(expiresAt) {
+  if (!expiresAt) return 0;
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  return ms > 0 ? Math.ceil(ms / (1000 * 60 * 60 * 24)) : 0;
+}
+
+// Student: current signals-subscription status.
 router.get('/mine', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-  const latest = await prisma.signalProof.findFirst({ where: { userId: req.user.id }, orderBy: { submittedAt: 'desc' } });
+  const remaining = daysRemaining(user.signalsExpiresAt);
+  const active = remaining > 0;
   res.json({
-    signalsAccess: user.signalsAccess,
-    channelUrl: user.signalsAccess ? SIGNALS_CHANNEL_URL : null,
+    active,
+    daysRemaining: remaining,
+    expiresAt: user.signalsExpiresAt,
+    channelUrl: active ? SIGNALS_CHANNEL_URL : null,
     verifyUrl: VERIFY_TELEGRAM_URL,
-    latest,
   });
 });
 
-router.post('/submit', requireAuth, async (req, res) => {
-  const { broker, amount } = req.body;
-  if (!VALID_BROKERS.includes(broker)) return res.status(400).json({ error: 'Invalid broker' });
-  const numericAmount = Number(amount);
-  if (!numericAmount || numericAmount < MIN_DEPOSIT) return res.status(400).json({ error: `Minimum deposit is $${MIN_DEPOSIT}` });
-
-  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-  if (user.signalsAccess) return res.status(409).json({ error: 'You already have signals access' });
-
-  const existingPending = await prisma.signalProof.findFirst({ where: { userId: req.user.id, status: 'Pending' } });
-  if (existingPending) return res.status(409).json({ error: 'You already have a submission pending review' });
-
-  const proof = await prisma.signalProof.create({
-    data: { userId: req.user.id, broker, amount: `$${numericAmount.toFixed(2)}`, status: 'Pending' },
-  });
-  await logActivity(`${req.user.name} submitted a $${numericAmount} deposit (${broker}) for signals access`);
-  notifyAdmin(
-    'New signals verification request',
-    `<p><strong>${req.user.name}</strong> (${req.user.email}) says they deposited ${proof.amount} with <strong>${broker}</strong> for signals access.</p>
-     <p>They were asked to message you directly on Telegram (${VERIFY_TELEGRAM_URL}) with proof — check for their message, then approve in the admin dashboard's Signals tab.</p>`,
-  );
-  res.status(201).json(proof);
-});
-
+// Admin: list every student with their signals-subscription status.
 router.get('/', requireAuth, requireAdmin, async (req, res) => {
-  const proofs = await prisma.signalProof.findMany({ include: { user: true }, orderBy: { submittedAt: 'desc' } });
-  res.json(proofs);
+  const students = await prisma.user.findMany({
+    where: { role: 'student' },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, email: true, membershipTier: true, signalsExpiresAt: true },
+  });
+  res.json(students.map((s) => {
+    const remaining = daysRemaining(s.signalsExpiresAt);
+    return { ...s, daysRemaining: remaining, active: remaining > 0 };
+  }));
 });
 
-router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  const { status } = req.body;
-  if (!['Approved', 'Rejected', 'Pending'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
+// Admin: grant / renew 30 days of signals access (after verifying the student
+// opened a partner broker account and paid the monthly subscription via Telegram).
+router.post('/:userId/grant', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return res.status(404).json({ error: 'Student not found' });
 
-  if (status === 'Approved') {
-    const current = await prisma.signalProof.findUnique({ where: { id } });
-    await prisma.user.update({ where: { id: current.userId }, data: { signalsAccess: true } });
-  }
-  const proof = await prisma.signalProof.update({ where: { id }, data: { status }, include: { user: true } });
-  if (status === 'Approved') {
-    await logActivity(`Granted ${proof.user.name} signals access (${proof.broker} deposit verified)`);
-  } else {
-    await logActivity(`Marked ${proof.user.name}'s signals deposit proof as ${status}`);
-  }
-  res.json(proof);
+  // Extend from the later of "now" or the current expiry, so renewals stack.
+  const base = user.signalsExpiresAt && new Date(user.signalsExpiresAt) > new Date()
+    ? new Date(user.signalsExpiresAt)
+    : new Date();
+  const expiresAt = new Date(base.getTime() + PERIOD_DAYS * 24 * 60 * 60 * 1000);
+
+  const updated = await prisma.user.update({ where: { id: userId }, data: { signalsExpiresAt: expiresAt, signalsAccess: true } });
+  await logActivity(`Granted ${user.name} ${PERIOD_DAYS} days of signals access`);
+  res.json({ id: updated.id, signalsExpiresAt: updated.signalsExpiresAt, daysRemaining: daysRemaining(updated.signalsExpiresAt) });
 });
 
-router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
-  const id = Number(req.params.id);
-  const proof = await prisma.signalProof.findUnique({ where: { id } });
-  if (!proof) return res.status(404).json({ error: 'Submission not found' });
-  await prisma.signalProof.delete({ where: { id } });
+router.post('/:userId/revoke', requireAuth, requireAdmin, async (req, res) => {
+  const userId = Number(req.params.userId);
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return res.status(404).json({ error: 'Student not found' });
+  await prisma.user.update({ where: { id: userId }, data: { signalsExpiresAt: null, signalsAccess: false } });
+  await logActivity(`Revoked ${user.name}'s signals access`);
   res.json({ ok: true });
 });
 

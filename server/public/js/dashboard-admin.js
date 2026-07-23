@@ -439,33 +439,33 @@ pmForm.addEventListener('submit', async (e) => {
   await Promise.all([loadPaymentMethods(), loadActivity()]);
 });
 
-// ================= SIGNALS =================
-let SIGNAL_PROOFS = [];
+// ================= SIGNALS (30-day subscription) =================
 async function loadSignals() {
-  SIGNAL_PROOFS = await apiFetch('/signals');
-  const map = { Approved: 'pill-success', Pending: 'pill-warn', Rejected: 'pill-danger' };
-  document.getElementById('signalRows').innerHTML = SIGNAL_PROOFS.length ? SIGNAL_PROOFS.map((s) => `
-    <tr><td>${s.user.name}</td><td>${s.broker}</td><td>${s.amount}</td>
-      <td>${s.proofUrl ? `<a href="${MEDIA_BASE}${s.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a>` : '<span class="mini-note">Via Telegram</span>'}</td>
-      <td><span class="badge-pill ${map[s.status]}">${s.status}</span></td>
+  const subs = await apiFetch('/signals');
+  document.getElementById('signalRows').innerHTML = subs.length ? subs.map((s) => `
+    <tr>
+      <td><strong>${s.name}</strong><br><span class="mini-note">${s.email}</span></td>
+      <td><span class="badge-pill ${s.membershipTier === 'Community' ? 'pill-success' : 'pill-muted'}">${s.membershipTier || 'Free'}</span></td>
+      <td>${s.active
+        ? `<span class="badge-pill pill-success">Active · ${s.daysRemaining} day${s.daysRemaining === 1 ? '' : 's'} left</span>`
+        : '<span class="badge-pill pill-muted">Inactive</span>'}</td>
+      <td>${s.signalsExpiresAt ? new Date(s.signalsExpiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '—'}</td>
       <td><div class="row-actions">
-        ${s.status === 'Pending' ? `
-          <button class="icon-btn" title="Approve" data-action="approve" data-id="${s.id}">✔</button>
-          <button class="icon-btn danger" title="Reject" data-action="reject" data-id="${s.id}">✕</button>` : ''}
-        <button class="icon-btn danger" title="Delete" data-action="delete" data-id="${s.id}">🗑</button>
-      </div></td></tr>`).join('')
-    : '<tr><td colspan="6"><p class="empty-note">No signals submissions yet.</p></td></tr>';
+        <button class="btn btn-outline btn-sm" data-grant="${s.id}">${s.active ? 'Renew +30d' : 'Grant 30d'}</button>
+        ${s.active ? `<button class="icon-btn danger" title="Revoke" data-revoke="${s.id}">✕</button>` : ''}
+      </div></td>
+    </tr>`).join('')
+    : '<tr><td colspan="5"><p class="empty-note">No students yet.</p></td></tr>';
 }
 document.getElementById('signalRows').addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'delete') {
-    if (!confirm('Delete this submission?')) return;
-    await apiFetch(`/signals/${btn.dataset.id}`, { method: 'DELETE' });
-  } else {
-    const status = btn.dataset.action === 'approve' ? 'Approved' : 'Rejected';
-    await apiFetch(`/signals/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
-  }
+  const grant = e.target.closest('button[data-grant]');
+  const revoke = e.target.closest('button[data-revoke]');
+  if (grant) {
+    await apiFetch(`/signals/${grant.dataset.grant}/grant`, { method: 'POST' });
+  } else if (revoke) {
+    if (!confirm('Revoke this student\'s signals access?')) return;
+    await apiFetch(`/signals/${revoke.dataset.revoke}/revoke`, { method: 'POST' });
+  } else return;
   await Promise.all([loadSignals(), loadActivity()]);
 });
 

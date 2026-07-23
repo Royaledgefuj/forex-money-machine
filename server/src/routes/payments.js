@@ -22,9 +22,10 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   if (status === 'Paid' && payment.userId) {
     const tier = MEMBERSHIP_TIERS.find((t) => payment.course === `${t} Membership`);
     if (tier) {
-      // Community membership is all-access: unlocks tools, live classes, signals,
-      // and the current batch (which rolls forward automatically each month).
-      await prisma.user.update({ where: { id: payment.userId }, data: { membershipTier: tier, signalsAccess: true } });
+      // Community membership unlocks tools, live classes and the current batch.
+      // Signals are granted separately from the admin Signals tab once the
+      // student's partner-broker account is verified (30-day subscription).
+      await prisma.user.update({ where: { id: payment.userId }, data: { membershipTier: tier } });
       await logActivity(`Upgraded ${payment.student} to ${tier} membership`);
       await enrollUserInCurrentBatch(payment.userId, 'membership');
     } else if (payment.courseId) {

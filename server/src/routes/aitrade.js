@@ -6,7 +6,7 @@ const { notifyAdmin } = require('../email');
 
 const router = express.Router();
 
-const VALID_BROKERS = ['PU Prime', 'Exness'];
+const VALID_BROKERS = ['PU Prime'];
 const MIN_DEPOSIT = 200;
 const ACCOUNT_TYPE = 'Cent / USDC-Cent';
 const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
