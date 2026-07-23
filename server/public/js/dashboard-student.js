@@ -207,7 +207,7 @@ function renderMembership() {
     </div>
     <div class="download-tile">
       <div class="dt-top"><h4>Trading Course</h4><span class="badge-pill pill-warn">$150 one-time</span></div>
-      <p class="meta">Full monthly batch course &amp; certification · Or $75 upfront + $10/month for ongoing course &amp; support</p>
+      <p class="meta"><strong>$150 one-time</strong> — full course &amp; certificate, learning access only (no ongoing support).<br><strong>Or $75 to start + $10 / month</strong> — ongoing course &amp; support; $10 due on the 1st of each month from your second month, uploaded as proof on Telegram for continuous access.</p>
       <button class="btn btn-gold btn-sm" data-goto-courses>View Course</button>
     </div>
     <div class="download-tile">
