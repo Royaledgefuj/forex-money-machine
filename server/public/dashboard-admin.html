@@ -32,6 +32,7 @@
       <button class="dash-nav-item" data-panel="paymentMethods"><span class="ic">🏦</span>Payment Methods</button>
       <button class="dash-nav-item" data-panel="signals"><span class="ic">📡</span>Signals</button>
       <button class="dash-nav-item" data-panel="aitrade"><span class="ic">🤖</span>AI Trade</button>
+      <button class="dash-nav-item" data-panel="vipBookings"><span class="ic">📅</span>VIP Bookings</button>
       <button class="dash-nav-item" data-panel="brokers"><span class="ic">🤝</span>Broker Referrals</button>
       <button class="dash-nav-item" data-panel="support"><span class="ic">🎧</span>Support Tickets</button>
       <button class="dash-nav-item" data-panel="activity"><span class="ic">🗒️</span>Activity Log</button>
@@ -354,6 +355,19 @@
         </div>
       </section>
 
+      <!-- VIP BOOKINGS -->
+      <section class="dash-panel" data-panel="vipBookings">
+        <div class="card">
+          <div class="card-head"><h3>VIP Coaching Bookings</h3><span class="mini-note">Confirm or cancel requested sessions — student gets an email either way</span></div>
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead><tr><th>Student</th><th>Requested</th><th>Notes</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="vipBookingRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <!-- BROKERS -->
       <section class="dash-panel" data-panel="brokers">
         <div class="stat-grid" id="brokerSummaryStats"></div>
@@ -394,6 +408,6 @@
 </div>
 
 <script src="js/auth.js?v=6"></script>
-<script src="js/dashboard-admin.js?v=14"></script>
+<script src="js/dashboard-admin.js?v=15"></script>
 </body>
 </html>

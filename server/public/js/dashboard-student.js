@@ -182,6 +182,20 @@ document.getElementById('downloadList').addEventListener('click', (e) => {
 // ================= MEMBERSHIP =================
 const VIP_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 let pendingMembershipRequests = [];
+let myVipBookings = [];
+
+async function loadVipBookings() {
+  myVipBookings = await apiFetch('/vip-bookings/mine');
+}
+
+function vipStatusNote() {
+  const pending = myVipBookings.find((b) => b.status === 'Pending');
+  const confirmed = myVipBookings.find((b) => b.status === 'Confirmed' && new Date(b.requestedAt) > new Date());
+  const fmt = (d) => new Date(d).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  if (confirmed) return `<p class="mini-note">✅ Confirmed: <strong>${fmt(confirmed.requestedAt)}</strong></p>`;
+  if (pending) return `<p class="mini-note">⏳ Requested: <strong>${fmt(pending.requestedAt)}</strong> — awaiting confirmation.</p>`;
+  return '';
+}
 
 function renderMembership() {
   const myTier = (session && session.membershipTier) || 'Free';
@@ -199,6 +213,11 @@ function renderMembership() {
   else if (hasPending) communityAction = '<button class="btn btn-outline btn-sm" disabled>Request Pending</button>';
   else communityAction = '<button class="btn btn-gold btn-sm" data-request-tier="Community">Join Community</button>';
 
+  const vipHasPending = myVipBookings.some((b) => b.status === 'Pending');
+  const vipAction = vipHasPending
+    ? '<button class="btn btn-outline btn-sm" disabled>Request Pending</button>'
+    : '<button class="btn btn-gold btn-sm" id="vipBookBtn">Book a Session</button>';
+
   document.getElementById('membershipPlans').innerHTML = `
     <div class="download-tile">
       <div class="dt-top"><h4>Community Membership</h4><span class="badge-pill pill-warn">$10 / month</span></div>
@@ -213,16 +232,50 @@ function renderMembership() {
     <div class="download-tile">
       <div class="dt-top"><h4>VIP Coaching</h4><span class="badge-pill pill-warn">$100 / hour</span></div>
       <p class="meta">1-on-1 mindset &amp; psychology coaching · $150 package available</p>
-      <a href="${VIP_TELEGRAM_URL}" target="_blank" rel="noopener" class="btn btn-gold btn-sm">Book on Telegram</a>
+      ${vipStatusNote()}
+      ${vipAction}
     </div>`;
 }
 
 document.getElementById('membershipPlans').addEventListener('click', (e) => {
   const gotoCourses = e.target.closest('button[data-goto-courses]');
   if (gotoCourses) { showPanel('courses'); return; }
+  if (e.target.closest('#vipBookBtn')) {
+    document.getElementById('vipForm').reset();
+    document.getElementById('vipError').hidden = true;
+    document.getElementById('vipModal').hidden = false;
+    return;
+  }
   const btn = e.target.closest('button[data-request-tier]');
   if (!btn) return;
   openPaymentModal({ kind: 'membership', tier: 'Community', name: 'Community Membership', amount: `$${MEMBERSHIP_TIERS.Community.price.toFixed(2)}` });
+});
+
+document.getElementById('vipModalClose').addEventListener('click', () => { document.getElementById('vipModal').hidden = true; });
+document.getElementById('vipModal').addEventListener('click', (e) => { if (e.target.id === 'vipModal') document.getElementById('vipModal').hidden = true; });
+
+document.getElementById('vipForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const date = document.getElementById('vipDate').value;
+  const time = document.getElementById('vipTime').value;
+  const notes = document.getElementById('vipNotes').value;
+  const errorEl = document.getElementById('vipError');
+  const submitBtn = document.getElementById('vipSubmitBtn');
+  submitBtn.disabled = true;
+  errorEl.hidden = true;
+  try {
+    const requestedAt = new Date(`${date}T${time}`).toISOString();
+    await apiFetch('/vip-bookings', { method: 'POST', body: JSON.stringify({ requestedAt, notes }) });
+    await loadVipBookings();
+    renderMembership();
+    document.getElementById('vipModal').hidden = true;
+    alert('Booking requested! We\'ll confirm your session shortly by email.');
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.hidden = false;
+  } finally {
+    submitBtn.disabled = false;
+  }
 });
 
 async function loadPendingMembershipRequests() {
@@ -235,7 +288,7 @@ async function refreshMembershipTier() {
   session.membershipTier = me.membershipTier;
   const stored = Auth.getSession();
   if (stored) { stored.membershipTier = me.membershipTier; localStorage.setItem('fmm_session', JSON.stringify(stored)); }
-  await loadPendingMembershipRequests();
+  await Promise.all([loadPendingMembershipRequests(), loadVipBookings()]);
   renderDownloads();
   renderMembership();
 }

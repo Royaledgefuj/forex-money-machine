@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade',
+  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade', vipBookings: 'VIP Bookings',
   brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
@@ -525,6 +525,41 @@ document.getElementById('aiTradeRows').addEventListener('click', async (e) => {
   await Promise.all([loadAiTrade(), loadActivity()]);
 });
 
+// ================= VIP BOOKINGS =================
+let VIP_BOOKINGS = [];
+async function loadVipBookings() {
+  VIP_BOOKINGS = await apiFetch('/vip-bookings');
+  const map = { Confirmed: 'pill-success', Pending: 'pill-warn', Cancelled: 'pill-danger' };
+  document.getElementById('vipBookingRows').innerHTML = VIP_BOOKINGS.length ? VIP_BOOKINGS.map((b) => `
+    <tr>
+      <td><strong>${b.user.name}</strong><br><span class="mini-note">${b.user.email}</span></td>
+      <td>${new Date(b.requestedAt).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+      <td>${b.notes ? `<span class="mini-note">${b.notes}</span>` : '—'}</td>
+      <td><span class="badge-pill ${map[b.status]}">${b.status}</span></td>
+      <td><div class="row-actions">
+        ${b.status === 'Pending' ? `
+          <button class="icon-btn" title="Confirm" data-confirm="${b.id}">✔</button>
+          <button class="icon-btn danger" title="Cancel" data-cancel="${b.id}">✕</button>` : ''}
+        <button class="icon-btn danger" title="Delete" data-delete="${b.id}">🗑</button>
+      </div></td>
+    </tr>`).join('')
+    : '<tr><td colspan="5"><p class="empty-note">No VIP booking requests yet.</p></td></tr>';
+}
+document.getElementById('vipBookingRows').addEventListener('click', async (e) => {
+  const confirmBtn = e.target.closest('button[data-confirm]');
+  const cancelBtn = e.target.closest('button[data-cancel]');
+  const deleteBtn = e.target.closest('button[data-delete]');
+  if (confirmBtn) {
+    await apiFetch(`/vip-bookings/${confirmBtn.dataset.confirm}`, { method: 'PATCH', body: JSON.stringify({ status: 'Confirmed' }) });
+  } else if (cancelBtn) {
+    await apiFetch(`/vip-bookings/${cancelBtn.dataset.cancel}`, { method: 'PATCH', body: JSON.stringify({ status: 'Cancelled' }) });
+  } else if (deleteBtn) {
+    if (!confirm('Delete this booking record?')) return;
+    await apiFetch(`/vip-bookings/${deleteBtn.dataset.delete}`, { method: 'DELETE' });
+  } else return;
+  await Promise.all([loadVipBookings(), loadActivity()]);
+});
+
 // ================= BROKERS =================
 let BROKERS = [];
 async function loadBrokers() {
@@ -627,7 +662,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
