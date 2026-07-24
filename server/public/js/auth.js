@@ -15,7 +15,10 @@ function tierRank(tier) {
 }
 
 const Auth = {
-  async login(email, password) {
+  // By default a session lives only for the browser tab/window's lifetime
+  // (sessionStorage) — logging out automatically when the browser is closed.
+  // Checking "Remember me" at login persists it across restarts (localStorage).
+  async login(email, password, remember = false) {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -23,7 +26,7 @@ const Auth = {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    return this.setSession(data);
+    return this.setSession(data, remember);
   },
   async register(name, email, password) {
     const res = await fetch(`${API_BASE}/auth/register`, {
@@ -41,19 +44,22 @@ const Auth = {
   loginDemo(role) {
     return role === 'admin' ? this.login('admin@fmm.com', 'admin123') : this.login('student@fmm.com', 'student123');
   },
-  setSession(data) {
+  setSession(data, remember = false) {
     const session = { token: data.token, ...data.user };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+    sessionStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_KEY);
+    (remember ? localStorage : sessionStorage).setItem(AUTH_KEY, JSON.stringify(session));
     return session;
   },
   getSession() {
     try {
-      return JSON.parse(localStorage.getItem(AUTH_KEY));
+      return JSON.parse(sessionStorage.getItem(AUTH_KEY) || localStorage.getItem(AUTH_KEY));
     } catch (e) {
       return null;
     }
   },
   logout() {
+    sessionStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(AUTH_KEY);
   },
   requireRole(role) {

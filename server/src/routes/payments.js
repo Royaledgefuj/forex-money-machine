@@ -3,6 +3,7 @@ const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
 const { enrollUserInCurrentBatch, enrollUserInCourse } = require('../enrollment');
+const { renderInvoice } = require('../invoice');
 
 const router = express.Router();
 
@@ -10,6 +11,27 @@ const MEMBERSHIP_TIERS = ['Community'];
 
 router.get('/', requireAuth, async (req, res) => {
   res.json(await prisma.payment.findMany({ orderBy: { date: 'desc' } }));
+});
+
+router.get('/:id/invoice', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const payment = await prisma.payment.findUnique({ where: { id }, include: { user: true } });
+  if (!payment) return res.status(404).json({ error: 'Payment not found' });
+  if (payment.userId !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'Not your invoice' });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="invoice-${payment.id}.pdf"`);
+  renderInvoice(res, {
+    invoiceNumber: `FMM-INV-${String(payment.id).padStart(5, '0')}`,
+    date: new Date(payment.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }),
+    studentName: payment.student,
+    studentEmail: payment.user ? payment.user.email : '—',
+    description: payment.course,
+    method: payment.method,
+    reference: payment.reference,
+    amount: payment.amount,
+    status: payment.status,
+  });
 });
 
 router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {

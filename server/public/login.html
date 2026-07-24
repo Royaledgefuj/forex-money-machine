@@ -37,7 +37,7 @@
         <input type="password" id="loginPassword" placeholder="••••••••" required minlength="4">
       </label>
       <div class="auth-row">
-        <label class="checkbox"><input type="checkbox" checked> Remember me</label>
+        <label class="checkbox"><input type="checkbox" id="rememberMe"> Remember me</label>
         <a href="#" class="auth-link">Forgot password?</a>
       </div>
       <p class="auth-error" id="loginError" hidden>Enter a valid email and a password (4+ characters).</p>
@@ -82,7 +82,7 @@
   </div>
 </div>
 
-<script src="js/auth.js?v=4"></script>
+<script src="js/auth.js?v=5"></script>
 <script>
   const tabs = document.querySelectorAll('.auth-tab');
   const panels = { login: document.getElementById('loginForm'), signup: document.getElementById('signupForm') };
@@ -102,11 +102,12 @@
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    const remember = document.getElementById('rememberMe').checked;
     const errorEl = document.getElementById('loginError');
     const submitBtn = e.target.querySelector('.auth-submit');
     submitBtn.disabled = true;
     try {
-      const session = await Auth.login(email, password);
+      const session = await Auth.login(email, password, remember);
       if (session) { errorEl.hidden = true; goToDashboard(session); }
       else { errorEl.textContent = 'Invalid email or password.'; errorEl.hidden = false; submitBtn.disabled = false; }
     } catch (err) {

@@ -358,7 +358,7 @@ async function loadPayments() {
     <tr><td>${t.student}</td><td>${t.course}</td><td>${t.method}${t.reference ? `<br><span class="mini-note">Ref: ${t.reference}</span>` : ''}</td><td>${t.amount}</td>
       <td>${t.proofUrl ? `<a href="${MEDIA_BASE}${t.proofUrl}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">View</a>` : '<span class="mini-note">Via Telegram</span>'}</td>
       <td><span class="badge-pill ${map[t.status]}">${t.status}</span></td>
-      <td>${t.status === 'Pending' ? `<button class="btn btn-outline btn-sm" data-approve="${t.id}">Approve</button>` : '<button class="btn btn-outline btn-sm">Invoice</button>'}</td></tr>`).join('');
+      <td>${t.status === 'Pending' ? `<button class="btn btn-outline btn-sm" data-approve="${t.id}">Approve</button>` : `<a class="btn btn-outline btn-sm" href="${API_BASE}/payments/${t.id}/invoice?token=${session.token}" target="_blank">Invoice</a>`}</td></tr>`).join('');
   return PAYMENTS;
 }
 document.getElementById('txnRows').addEventListener('click', async (e) => {

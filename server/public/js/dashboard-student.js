@@ -315,7 +315,7 @@ async function loadPayments() {
   const mine = all.filter((p) => p.student === session.name);
   document.getElementById('paymentRows').innerHTML = mine.length ? mine.map((p) => `
     <tr><td>${new Date(p.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</td><td>${p.course}</td><td>${p.method}</td><td>${p.amount}</td>
-    <td><span class="badge-pill ${p.status === 'Paid' ? 'pill-success' : p.status === 'Pending' ? 'pill-warn' : 'pill-danger'}">${p.status}</span></td><td><a href="#" class="btn btn-outline btn-sm">Invoice</a></td></tr>`).join('')
+    <td><span class="badge-pill ${p.status === 'Paid' ? 'pill-success' : p.status === 'Pending' ? 'pill-warn' : 'pill-danger'}">${p.status}</span></td><td><a href="${API_BASE}/payments/${p.id}/invoice?token=${session.token}" target="_blank" class="btn btn-outline btn-sm">Invoice</a></td></tr>`).join('')
     : '<tr><td colspan="6"><p class="empty-note">No payments yet.</p></td></tr>';
 }
 loadPayments();
