@@ -26,6 +26,20 @@ const Auth = {
     });
     if (!res.ok) return null;
     const data = await res.json();
+    if (data.requires2FA) return { requires2FA: true, userId: data.userId };
+    return this.setSession(data, remember);
+  },
+  async verify2fa(userId, code, remember = false) {
+    const res = await fetch(`${API_BASE}/auth/verify-2fa`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, code }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Invalid code');
+    }
+    const data = await res.json();
     return this.setSession(data, remember);
   },
   async register(name, email, password) {

@@ -27,4 +27,25 @@ async function notifyAdmin(subject, html) {
   }
 }
 
-module.exports = { notifyAdmin };
+// Generic send — used for 2FA codes etc. Returns false (never throws) if SMTP
+// isn't configured or sending fails, so callers can fail open rather than
+// ever locking someone out for an infra reason.
+async function sendMail(to, subject, html) {
+  if (!transporter) {
+    console.log(`[email] Skipped "${subject}" to ${to} — SMTP_USER/SMTP_PASS not configured`);
+    return false;
+  }
+  try {
+    await transporter.sendMail({ from: `Forex Money Machine Academy <${process.env.SMTP_USER}>`, to, subject, html });
+    return true;
+  } catch (err) {
+    console.error(`[email] Failed to send "${subject}" to ${to}:`, err.message);
+    return false;
+  }
+}
+
+function isEmailConfigured() {
+  return !!transporter;
+}
+
+module.exports = { notifyAdmin, sendMail, isEmailConfigured };
