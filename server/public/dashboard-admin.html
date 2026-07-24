@@ -319,8 +319,19 @@
 
       <!-- SIGNALS -->
       <section class="dash-panel" data-panel="signals">
+        <div class="stat-grid" id="signalsStats"></div>
         <div class="card">
-          <div class="card-head"><h3>Signals Subscriptions</h3><span class="mini-note">Grant 30 days once the student's partner-broker account &amp; Community payment are verified on Telegram</span></div>
+          <div class="card-head">
+            <h3>Community &amp; Signals</h3>
+            <span class="mini-note">Grant 30 days once the student's partner-broker account &amp; Community payment are verified on Telegram</span>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <select id="signalsFilter" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:9px 14px;color:var(--white);font-size:.85rem;">
+              <option value="all">All Students</option>
+              <option value="community">Community Members Only</option>
+              <option value="signals">Active Signals Group Only</option>
+            </select>
+          </div>
           <div class="table-wrap">
             <table class="dash-table">
               <thead><tr><th>Student</th><th>Membership</th><th>Signals</th><th>Expires</th><th>Actions</th></tr></thead>
@@ -383,6 +394,6 @@
 </div>
 
 <script src="js/auth.js?v=6"></script>
-<script src="js/dashboard-admin.js?v=13"></script>
+<script src="js/dashboard-admin.js?v=14"></script>
 </body>
 </html>

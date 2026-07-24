@@ -440,9 +440,25 @@ pmForm.addEventListener('submit', async (e) => {
 });
 
 // ================= SIGNALS (30-day subscription) =================
-async function loadSignals() {
-  const subs = await apiFetch('/signals');
-  document.getElementById('signalRows').innerHTML = subs.length ? subs.map((s) => `
+let SIGNALS_STUDENTS = [];
+
+function renderSignalsStats() {
+  const communityCount = SIGNALS_STUDENTS.filter((s) => s.membershipTier === 'Community').length;
+  const activeSignalsCount = SIGNALS_STUDENTS.filter((s) => s.active).length;
+  document.getElementById('signalsStats').innerHTML = [
+    { icon: '💎', num: communityCount, label: 'Community Members ($10/mo)' },
+    { icon: '📡', num: activeSignalsCount, label: 'Active in Signals Group' },
+  ].map((s) => `<div class="stat-card"><div class="stat-top"><span class="ic">${s.icon}</span></div><span class="num">${s.num}</span><span class="label">${s.label}</span></div>`).join('');
+}
+
+function renderSignalsRows() {
+  const filter = document.getElementById('signalsFilter').value;
+  const rows = SIGNALS_STUDENTS.filter((s) => {
+    if (filter === 'community') return s.membershipTier === 'Community';
+    if (filter === 'signals') return s.active;
+    return true;
+  });
+  document.getElementById('signalRows').innerHTML = rows.length ? rows.map((s) => `
     <tr>
       <td><strong>${s.name}</strong><br><span class="mini-note">${s.email}</span></td>
       <td><span class="badge-pill ${s.membershipTier === 'Community' ? 'pill-success' : 'pill-muted'}">${s.membershipTier || 'Free'}</span></td>
@@ -455,8 +471,15 @@ async function loadSignals() {
         ${s.active ? `<button class="icon-btn danger" title="Revoke" data-revoke="${s.id}">✕</button>` : ''}
       </div></td>
     </tr>`).join('')
-    : '<tr><td colspan="5"><p class="empty-note">No students yet.</p></td></tr>';
+    : '<tr><td colspan="5"><p class="empty-note">No students match this filter.</p></td></tr>';
 }
+
+async function loadSignals() {
+  SIGNALS_STUDENTS = await apiFetch('/signals');
+  renderSignalsStats();
+  renderSignalsRows();
+}
+document.getElementById('signalsFilter').addEventListener('change', renderSignalsRows);
 document.getElementById('signalRows').addEventListener('click', async (e) => {
   const grant = e.target.closest('button[data-grant]');
   const revoke = e.target.closest('button[data-revoke]');
