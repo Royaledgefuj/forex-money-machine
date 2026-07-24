@@ -257,6 +257,17 @@
       <button type="button" class="modal-close" id="payModalClose">&times;</button>
     </div>
     <p class="mini-note" id="payModalAmount" style="margin-bottom:16px;"></p>
+    <div class="form-field full" id="payPlanField" hidden style="margin-bottom:16px;">
+      <label>Choose Your Plan</label>
+      <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+        <input type="radio" name="payPlan" id="payPlanFull" value="full" checked style="width:auto;margin-top:4px;">
+        <span class="mini-note"><strong id="payPlanFullLabel">Pay in full</strong> — one-time, learning access + certificate only (no ongoing support)</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:8px;">
+        <input type="radio" name="payPlan" id="payPlanInstallment" value="installment" style="width:auto;margin-top:4px;">
+        <span class="mini-note"><strong>$75 to start + $10 / month</strong> — ongoing course access &amp; support; $10 due on the 1st of each month from your second month, verified by Telegram proof</span>
+      </label>
+    </div>
     <form id="payForm" class="form-grid">
       <div class="form-field full">
         <label>Payment Method</label>
@@ -297,6 +308,6 @@
 </div>
 
 <script src="js/auth.js?v=6"></script>
-<script src="js/dashboard-student.js?v=16"></script>
+<script src="js/dashboard-student.js?v=17"></script>
 </body>
 </html>

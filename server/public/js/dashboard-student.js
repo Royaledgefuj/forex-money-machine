@@ -304,12 +304,31 @@ const payMethodSelect = document.getElementById('payMethod');
 const payInstructions = document.getElementById('payInstructions');
 const payError = document.getElementById('payError');
 
+const COURSE_INSTALLMENT_AMOUNT = '$75.00';
+const payPlanField = document.getElementById('payPlanField');
+
+function updatePayAmountForPlan() {
+  if (currentPaymentRequest.kind !== 'course') return;
+  const plan = document.querySelector('input[name="payPlan"]:checked').value;
+  const amount = plan === 'installment' ? COURSE_INSTALLMENT_AMOUNT : currentPaymentRequest.amount;
+  document.getElementById('payModalAmount').textContent = `Amount due now: ${amount}`;
+}
+
 async function openPaymentModal(request) {
   currentPaymentRequest = request;
   payError.hidden = true;
   payForm.reset();
   document.getElementById('payModalTitle').textContent = `Pay for ${request.name}`;
-  document.getElementById('payModalAmount').textContent = `Amount due: ${request.amount}`;
+
+  if (request.kind === 'course') {
+    document.getElementById('payPlanFullLabel').textContent = `Pay in full — ${request.amount}`;
+    document.getElementById('payPlanFull').checked = true;
+    payPlanField.hidden = false;
+    updatePayAmountForPlan();
+  } else {
+    payPlanField.hidden = true;
+    document.getElementById('payModalAmount').textContent = `Amount due: ${request.amount}`;
+  }
 
   if (!PAYMENT_METHODS.length) PAYMENT_METHODS = await apiFetch('/payment-methods');
   payMethodSelect.innerHTML = PAYMENT_METHODS.map((m) => `<option value="${m.name}">${m.name}</option>`).join('');
@@ -317,6 +336,7 @@ async function openPaymentModal(request) {
 
   payModal.hidden = false;
 }
+document.querySelectorAll('input[name="payPlan"]').forEach((r) => r.addEventListener('change', updatePayAmountForPlan));
 
 function updatePayInstructions() {
   const method = PAYMENT_METHODS.find((m) => m.name === payMethodSelect.value);
@@ -341,6 +361,10 @@ payForm.addEventListener('submit', async (e) => {
       method: payMethodSelect.value,
       reference: document.getElementById('payReference').value || undefined,
     };
+
+    if (currentPaymentRequest.kind === 'course') {
+      body.plan = document.querySelector('input[name="payPlan"]:checked').value;
+    }
 
     if (currentPaymentRequest.kind === 'membership') {
       body.tier = currentPaymentRequest.tier;

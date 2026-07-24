@@ -90,10 +90,13 @@ router.get('/:id/watch', requireAuth, async (req, res) => {
 // ---- Individual course purchase (alternative to membership) ----
 const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 
+const INSTALLMENT_START_AMOUNT = '$75.00';
+
 router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
-  const { method, reference } = req.body;
+  const { method, reference, plan } = req.body;
   if (!method) return res.status(400).json({ error: 'Payment method is required' });
+  if (plan && !['full', 'installment'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' });
 
   const course = await prisma.course.findUnique({ where: { id } });
   if (!course || course.status !== 'Published') return res.status(404).json({ error: 'Course not found' });
@@ -107,16 +110,21 @@ router.post('/:id/purchase-request', requireAuth, async (req, res) => {
   const existingPending = await prisma.payment.findFirst({ where: { userId: req.user.id, courseId: id, status: 'Pending' } });
   if (existingPending) return res.status(409).json({ error: 'You already have a pending request for this course' });
 
+  const isInstallment = plan === 'installment';
+  const amount = isInstallment ? INSTALLMENT_START_AMOUNT : course.price;
+  const courseLabel = isInstallment ? `${course.name} (Installment — $75 + $10/mo)` : course.name;
+
   const payment = await prisma.payment.create({
     data: {
-      userId: req.user.id, courseId: id, student: req.user.name, course: course.name,
-      method, reference: reference || null, amount: course.price, status: 'Pending',
+      userId: req.user.id, courseId: id, student: req.user.name, course: courseLabel,
+      method, reference: reference || null, amount, status: 'Pending',
     },
   });
-  await logActivity(`${req.user.name} requested access to "${course.name}"`);
+  await logActivity(`${req.user.name} requested access to "${course.name}"${isInstallment ? ' (installment plan)' : ''}`);
   notifyAdmin(
-    `New payment request: ${course.name}`,
-    `<p><strong>${req.user.name}</strong> requested <strong>${course.name}</strong> (${course.price}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+    `New payment request: ${courseLabel}`,
+    `<p><strong>${req.user.name}</strong> requested <strong>${courseLabel}</strong> (${amount}) via ${method}${reference ? ` — ref: ${reference}` : ''}.</p>
+     ${isInstallment ? '<p>Installment plan — remind them $10/month is due on the 1st from their second month, verified by Telegram proof.</p>' : ''}
      <p>They were asked to message you directly on Telegram (${VERIFY_TELEGRAM_URL}) with their payment proof — check for their message, then approve in the admin dashboard's Payments tab.</p>`,
   );
   res.status(201).json(payment);
