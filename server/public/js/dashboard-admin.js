@@ -14,7 +14,7 @@ const panels = document.querySelectorAll('.dash-panel[data-panel]');
 const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
-  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade', vipBookings: 'VIP Bookings',
+  downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade', vipBookings: 'VIP Bookings', testimonials: 'Testimonials',
   brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
 };
 function showPanel(key) {
@@ -560,6 +560,50 @@ document.getElementById('vipBookingRows').addEventListener('click', async (e) =>
   await Promise.all([loadVipBookings(), loadActivity()]);
 });
 
+// ================= TESTIMONIALS =================
+let TESTIMONIALS = [];
+async function loadTestimonials() {
+  TESTIMONIALS = await apiFetch('/testimonials');
+  const map = { Approved: 'pill-success', Pending: 'pill-warn', Rejected: 'pill-danger' };
+  document.getElementById('testimonialRows').innerHTML = TESTIMONIALS.length ? TESTIMONIALS.map((t) => `
+    <tr>
+      <td><strong>${t.user.name}</strong><br><span class="mini-note">${t.user.email}</span></td>
+      <td style="max-width:320px;">${t.text}</td>
+      <td>${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</td>
+      <td><span class="badge-pill ${map[t.status]}">${t.status}</span></td>
+      <td><div class="row-actions">
+        ${t.status === 'Pending' ? `
+          <button class="icon-btn" title="Approve" data-approve="${t.id}">✔</button>
+          <button class="icon-btn danger" title="Reject" data-reject="${t.id}">✕</button>` : ''}
+        ${t.status === 'Approved' ? `<button class="icon-btn" title="Copy for social media" data-copy="${t.id}">📋</button>` : ''}
+        <button class="icon-btn danger" title="Delete" data-delete="${t.id}">🗑</button>
+      </div></td>
+    </tr>`).join('')
+    : '<tr><td colspan="5"><p class="empty-note">No testimonials submitted yet.</p></td></tr>';
+}
+document.getElementById('testimonialRows').addEventListener('click', async (e) => {
+  const approveBtn = e.target.closest('button[data-approve]');
+  const rejectBtn = e.target.closest('button[data-reject]');
+  const deleteBtn = e.target.closest('button[data-delete]');
+  const copyBtn = e.target.closest('button[data-copy]');
+  if (approveBtn) {
+    await apiFetch(`/testimonials/${approveBtn.dataset.approve}`, { method: 'PATCH', body: JSON.stringify({ status: 'Approved' }) });
+  } else if (rejectBtn) {
+    await apiFetch(`/testimonials/${rejectBtn.dataset.reject}`, { method: 'PATCH', body: JSON.stringify({ status: 'Rejected' }) });
+  } else if (deleteBtn) {
+    if (!confirm('Delete this testimonial?')) return;
+    await apiFetch(`/testimonials/${deleteBtn.dataset.delete}`, { method: 'DELETE' });
+  } else if (copyBtn) {
+    const t = TESTIMONIALS.find((x) => x.id === Number(copyBtn.dataset.copy));
+    if (t) {
+      navigator.clipboard.writeText(`"${t.text}" — ${t.user.name}, Forex Money Machine Academy`);
+      alert('Copied to clipboard!');
+    }
+    return;
+  } else return;
+  await Promise.all([loadTestimonials(), loadActivity()]);
+});
+
 // ================= BROKERS =================
 let BROKERS = [];
 async function loadBrokers() {
@@ -662,7 +706,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadTestimonials(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

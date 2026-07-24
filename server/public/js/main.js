@@ -236,3 +236,31 @@ window.addEventListener('scroll', () => {
   if (window.scrollY > 12) header.style.boxShadow = '0 8px 30px rgba(0,0,0,0.35)';
   else header.style.boxShadow = 'none';
 });
+
+// ---- Real student testimonials (approved only) ----
+(async function loadTestimonials() {
+  const container = document.getElementById('testimonialsContainer');
+  if (!container) return;
+  try {
+    const res = await fetch(`${API_BASE}/testimonials/public`);
+    if (!res.ok) return;
+    const testimonials = await res.json();
+    if (!testimonials.length) return;
+    const avatarClasses = ['avatar-a', 'avatar-b', 'avatar-c'];
+    container.innerHTML = testimonials.slice(0, 6).map((t, i) => {
+      const initials = t.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
+      return `
+      <div class="testimonial">
+        <div class="quote-mark">"</div>
+        <p>"${t.text}"</p>
+        <div class="testimonial-author">
+          <div class="avatar avatar-photo ${avatarClasses[i % avatarClasses.length]}">${initials}</div>
+          <div><strong>${t.name}</strong><span>${t.country || 'Student'}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+    container.hidden = false;
+  } catch (err) {
+    console.error('Testimonials load failed:', err);
+  }
+})();

@@ -18,7 +18,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Overview', courses: 'My Courses', live: 'Live Classes', certificates: 'Certificates',
   downloads: 'Downloads & Tools', payments: 'Payments & Brokers', membership: 'Membership', signals: 'Signals',
-  aitrade: 'AI Trade', community: 'Community', support: 'Support', profile: 'Profile & Security',
+  aitrade: 'AI Trade', feedback: 'Feedback', community: 'Community', support: 'Support', profile: 'Profile & Security',
 };
 
 function showPanel(key) {
@@ -483,6 +483,70 @@ async function loadAiTrade() {
   });
 }
 loadAiTrade();
+
+// ================= FEEDBACK / TESTIMONIALS =================
+function renderFeedbackForm() {
+  return `
+    <p class="mini-note" style="margin-bottom:16px;">Tell us about your experience — what worked, what you achieved, anything you'd tell a friend considering the academy. If approved, we may feature it on our website or social media (using your name).</p>
+    <form id="feedbackForm" class="form-grid">
+      <div class="form-field full"><label>Rating</label>
+        <select id="fbRating" required>
+          <option value="5">★★★★★ (5)</option>
+          <option value="4">★★★★☆ (4)</option>
+          <option value="3">★★★☆☆ (3)</option>
+          <option value="2">★★☆☆☆ (2)</option>
+          <option value="1">★☆☆☆☆ (1)</option>
+        </select>
+      </div>
+      <div class="form-field full"><label>Your feedback</label><textarea id="fbText" placeholder="Share your experience..." required></textarea></div>
+      <p class="modal-error" id="fbError" hidden></p>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="fbSubmitBtn">Submit Feedback</button></div>
+    </form>`;
+}
+
+function feedbackHistoryHtml(items) {
+  if (!items.length) return '';
+  const map = { Pending: 'pill-warn', Approved: 'pill-success', Rejected: 'pill-danger' };
+  return `<div class="table-wrap" style="margin-top:24px;"><table class="dash-table">
+    <thead><tr><th>Date</th><th>Feedback</th><th>Rating</th><th>Status</th></tr></thead>
+    <tbody>${items.map((t) => `
+      <tr><td>${new Date(t.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</td>
+        <td>${t.text}</td><td>${'★'.repeat(t.rating)}${'☆'.repeat(5 - t.rating)}</td>
+        <td><span class="badge-pill ${map[t.status]}">${t.status}</span></td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+async function loadFeedback() {
+  const mine = await apiFetch('/testimonials/mine');
+  const el = document.getElementById('feedbackContent');
+  const hasPending = mine.some((t) => t.status === 'Pending');
+
+  el.innerHTML = (hasPending ? '<p class="mini-note">⏳ Your feedback is pending admin review.</p>' : renderFeedbackForm()) + feedbackHistoryHtml(mine);
+
+  const form = document.getElementById('feedbackForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('fbSubmitBtn');
+      const errorEl = document.getElementById('fbError');
+      submitBtn.disabled = true;
+      errorEl.hidden = true;
+      try {
+        await apiFetch('/testimonials', {
+          method: 'POST',
+          body: JSON.stringify({ text: document.getElementById('fbText').value, rating: document.getElementById('fbRating').value }),
+        });
+        await loadFeedback();
+        alert('Thank you! Your feedback has been submitted for review.');
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+      }
+    });
+  }
+}
+loadFeedback();
 
 document.getElementById('brokerAccounts').innerHTML = ['Exness', 'PU Prime', 'JustMarkets'].map((name) => `
   <div class="course-row"><div class="thumb">${name.split(' ').map((w) => w[0]).join('')}</div><div class="course-row-info"><strong>${name}</strong><span class="progress-pct">Not linked yet</span></div><a href="index.html#brokers" class="btn btn-outline btn-sm">Open Account</a></div>`).join('');
