@@ -30,6 +30,7 @@ model User {
   certificates   Certificate[]
   aiTradeRequests AiTradeRequest[]
   vipBookings    VipBooking[]
+  testimonials   Testimonial[]
 }
 
 model Course {
@@ -141,6 +142,16 @@ model VipBooking {
   notes       String?
   status      String   @default("Pending") // Pending | Confirmed | Cancelled
   createdAt   DateTime @default(now())
+}
+
+model Testimonial {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text       String
+  rating     Int      @default(5) // 1-5
+  status     String   @default("Pending") // Pending | Approved | Rejected
+  createdAt  DateTime @default(now())
 }
 
 model Resource {
