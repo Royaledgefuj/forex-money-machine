@@ -25,6 +25,7 @@ app.use('/api/payment-methods', require('./routes/paymentMethods'));
 app.use('/api/signals', require('./routes/signals'));
 app.use('/api/ai-trade', require('./routes/aitrade'));
 app.use('/api/vip-bookings', require('./routes/vipBookings'));
+app.use('/api/testimonials', require('./routes/testimonials'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/market-quotes', require('./routes/marketQuotes'));
