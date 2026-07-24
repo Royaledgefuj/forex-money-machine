@@ -29,6 +29,7 @@ model User {
   signalProofs   SignalProof[]
   certificates   Certificate[]
   aiTradeRequests AiTradeRequest[]
+  vipBookings    VipBooking[]
 }
 
 model Course {
@@ -130,6 +131,16 @@ model AiTradeRequest {
   undertakingAccepted Boolean @default(false)
   status        String   @default("Pending") // Pending | Approved | Connected | Rejected
   submittedAt   DateTime @default(now())
+}
+
+model VipBooking {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestedAt DateTime // the date/time slot the student picked
+  notes       String?
+  status      String   @default("Pending") // Pending | Confirmed | Cancelled
+  createdAt   DateTime @default(now())
 }
 
 model Resource {
