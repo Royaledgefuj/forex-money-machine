@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<title>XAU/USD Live Signal | Forex Money Machine Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=7">
+<link rel="stylesheet" href="css/calculators.css?v=1">
+<style>
+  .xs-card { display: grid; gap: 1rem; }
+  .xs-row { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .xs-badge { display: inline-block; padding: .25rem .75rem; border-radius: 999px; font-weight: 700; font-size: .85rem; }
+  .xs-badge.buy { background: rgba(0,255,136,.15); color: #00ff88; }
+  .xs-badge.sell { background: rgba(255,59,92,.15); color: #ff3b5c; }
+  .xs-badge.neutral { background: rgba(255,255,255,.1); color: #aaa; }
+  .xs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; }
+  .xs-tile { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: .75rem 1rem; }
+  .xs-tile-label { display: block; font-size: .75rem; opacity: .65; margin-bottom: .25rem; }
+  .xs-tile-val { font-size: 1.1rem; font-weight: 700; }
+  .xs-explain { list-style: none; padding: 0; margin: 0; display: grid; gap: .4rem; }
+  .xs-explain li { font-size: .9rem; opacity: .85; padding-left: 1rem; position: relative; }
+  .xs-explain li::before { content: "\2022"; position: absolute; left: 0; opacity: .5; }
+  .xs-error { color: #ff3b5c; }
+</style>
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="index.html" class="brand">
+      <img src="assets/logo.png" alt="Forex Money Machine Academy" class="brand-logo">
+    </a>
+    <div class="header-actions">
+      <a href="index.html#tools" class="btn btn-outline">Back to Tools</a>
+    </div>
+  </div>
+</header>
+
+<div class="calc-shell">
+  <div class="calc-head">
+    <p class="kicker">Live Technical Read</p>
+    <h1>XAU/USD Signal</h1>
+    <p>Computed live from real price data and standard indicators (EMA20/50/200, RSI14, MACD, ATR14). Not a backtested strategy — a transparent, rule-based technical summary.</p>
+  </div>
+
+  <div class="calc-card xs-card" id="xsCard">
+    <p>Loading live data…</p>
+  </div>
+
+  <p class="calc-disclaimer">This is an automated technical-analysis summary, not financial advice and not a guarantee of any outcome. Always manage your own risk.</p>
+</div>
+
+<script>
+async function loadSignal() {
+  const card = document.getElementById('xsCard');
+  try {
+    const res = await fetch('/api/signals/xauusd/live');
+    const data = await res.json();
+    if (!res.ok) {
+      card.innerHTML = `<p class="xs-error">Couldn't load a live signal: ${data.error || 'unknown error'}</p>`;
+      return;
+    }
+    render(card, data);
+  } catch (e) {
+    card.innerHTML = `<p class="xs-error">Couldn't reach the signal API: ${e.message}</p>`;
+  }
+}
+
+function badgeClass(direction) {
+  if (direction === 'BUY') return 'buy';
+  if (direction === 'SELL') return 'sell';
+  return 'neutral';
+}
+
+function render(card, d) {
+  const i = d.indicators;
+  const t = d.trade;
+  card.innerHTML = `
+    <div class="xs-row">
+      <div>
+        <span class="xs-badge ${badgeClass(d.direction)}">${d.direction}</span>
+        <span style="margin-left:.75rem; opacity:.7;">Confidence ${d.confidence}%</span>
+      </div>
+      <div style="opacity:.6; font-size:.85rem;">${d.timeframe} · ${new Date(d.generatedAt).toLocaleTimeString()}</div>
+    </div>
+    <div class="xs-grid">
+      <div class="xs-tile"><span class="xs-tile-label">Price</span><span class="xs-tile-val">${d.price}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">EMA20</span><span class="xs-tile-val">${i.ema20 ?? '—'}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">EMA50</span><span class="xs-tile-val">${i.ema50 ?? '—'}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">EMA200</span><span class="xs-tile-val">${i.ema200 ?? '—'}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">RSI(14)</span><span class="xs-tile-val">${i.rsi14 ?? '—'}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">MACD</span><span class="xs-tile-val">${i.macd ? i.macd.line + ' / ' + i.macd.signal : '—'}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">ATR(14)</span><span class="xs-tile-val">${i.atr14 ?? '—'}</span></div>
+    </div>
+    ${t ? `
+    <div class="xs-grid">
+      <div class="xs-tile"><span class="xs-tile-label">Entry Zone</span><span class="xs-tile-val">${t.entryZone[0]} – ${t.entryZone[1]}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">Stop Loss</span><span class="xs-tile-val">${t.stopLoss}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">TP1</span><span class="xs-tile-val">${t.takeProfit1}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">TP2</span><span class="xs-tile-val">${t.takeProfit2}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">TP3</span><span class="xs-tile-val">${t.takeProfit3}</span></div>
+      <div class="xs-tile"><span class="xs-tile-label">R:R to TP2</span><span class="xs-tile-val">1:${t.riskRewardToTp2}</span></div>
+    </div>` : '<p style="opacity:.7;">Indicators are mixed — no directional trade parameters generated.</p>'}
+    <div>
+      <p style="opacity:.7; margin-bottom:.5rem;">Why:</p>
+      <ul class="xs-explain">${d.explanation.map((e) => `<li>${e}</li>`).join('')}</ul>
+    </div>
+  `;
+}
+
+loadSignal();
+setInterval(loadSignal, 30000);
+</script>
+</body>
+</html>
