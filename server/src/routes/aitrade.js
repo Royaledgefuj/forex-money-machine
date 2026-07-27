@@ -14,18 +14,34 @@ const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 router.get('/mine', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   const latest = await prisma.aiTradeRequest.findFirst({ where: { userId: req.user.id }, orderBy: { submittedAt: 'desc' } });
-  res.json({ aiTradeConnected: user.aiTradeConnected, verifyUrl: VERIFY_TELEGRAM_URL, latest });
+  res.json({
+    aiTradeConnected: user.aiTradeConnected,
+    undertakingAccepted: !!user.aiTradeUndertakingAcceptedAt,
+    undertakingAcceptedAt: user.aiTradeUndertakingAcceptedAt,
+    verifyUrl: VERIFY_TELEGRAM_URL,
+    latest,
+  });
+});
+
+// One-time signed undertaking — must be accepted before a student can submit
+// any AI Trade request. Stamped on the user, not re-asked per request.
+router.post('/accept-undertaking', requireAuth, async (req, res) => {
+  const user = await prisma.user.update({ where: { id: req.user.id }, data: { aiTradeUndertakingAcceptedAt: new Date() } });
+  await logActivity(`${user.name} signed the AI Trade risk undertaking`);
+  res.json({ undertakingAccepted: true, undertakingAcceptedAt: user.aiTradeUndertakingAcceptedAt });
 });
 
 router.post('/submit', requireAuth, async (req, res) => {
-  const { broker, accountNumber, amount, undertakingAccepted } = req.body;
+  const { broker, accountNumber, amount } = req.body;
   if (!VALID_BROKERS.includes(broker)) return res.status(400).json({ error: 'Invalid broker' });
   if (!accountNumber || !accountNumber.trim()) return res.status(400).json({ error: 'Trading account number is required' });
-  if (!undertakingAccepted) return res.status(400).json({ error: 'You must accept the risk undertaking to proceed' });
+
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!user.aiTradeUndertakingAcceptedAt) return res.status(400).json({ error: 'You must sign the risk undertaking before submitting a request' });
+
   const numericAmount = Number(amount);
   if (!numericAmount || numericAmount < MIN_DEPOSIT) return res.status(400).json({ error: `Minimum deposit is $${MIN_DEPOSIT}` });
 
-  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (user.aiTradeConnected) return res.status(409).json({ error: 'You are already connected to AI Trade' });
 
   const existingPending = await prisma.aiTradeRequest.findFirst({ where: { userId: req.user.id, status: { in: ['Pending', 'Approved'] } } });
