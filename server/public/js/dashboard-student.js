@@ -431,6 +431,44 @@ loadSignals();
 // ================= AI TRADE =================
 const AI_TRADE_BROKERS = ['PU Prime'];
 
+function renderUndertakingGate() {
+  const today = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return `
+    <div style="background:rgba(212,175,55,0.05); border:1px solid rgba(212,175,55,0.3); border-radius:12px; padding:20px; margin-bottom:16px;">
+      <h4 style="margin-top:0;">AI Copy Trading Risk Acknowledgement and No-Refund Agreement</h4>
+      <p class="mini-note">By joining the AI Copy Trading service, I acknowledge, understand, and agree to the following terms and conditions:</p>
+      <ol style="color:var(--muted); font-size:.9rem; line-height:1.8; padding-left:20px;">
+        <li><strong>Understanding of Risk</strong> — I understand that forex, commodities, cryptocurrencies, and other financial markets are highly volatile and involve substantial risk. Trading may result in partial or total loss of my invested capital.</li>
+        <li><strong>No Guaranteed Returns</strong> — I acknowledge that no guarantees, promises, or assurances have been made regarding profits, returns on investment, or preservation of capital. Past performance is not indicative of future results.</li>
+        <li><strong>Independent Decision</strong> — I confirm that I am voluntarily choosing to participate in the AI Copy Trading service after conducting my own research (DYOR). I understand that all trading decisions ultimately remain my responsibility.</li>
+        <li><strong>Acceptance of Losses</strong> — I understand that losses are a normal part of trading and accept full responsibility for any financial losses incurred while using the AI Copy Trading service.</li>
+        <li><strong>No Refund Policy</strong> — I acknowledge and agree that all payments made for AI Copy Trading services, subscriptions, setup fees, or related services are final and non-refundable, regardless of trading performance, profits, losses, market conditions, or my decision to discontinue the service.</li>
+        <li><strong>No Liability</strong> — I agree not to hold VR Money Magnet, its founder, employees, affiliates, partners, or representatives liable for any financial loss, missed opportunities, indirect damages, or any other consequences arising from participation in the AI Copy Trading service.</li>
+        <li><strong>Financial Responsibility</strong> — I confirm that I am using funds that I can afford to risk and that participation in AI Copy Trading will not cause financial hardship.</li>
+        <li><strong>Educational Purpose</strong> — I understand that the information, support, and guidance provided are for educational and informational purposes only and do not constitute financial, investment, or legal advice.</li>
+        <li><strong>Agreement</strong> — By signing this undertaking, I confirm that I have read, understood, and voluntarily accepted all the above terms and conditions without coercion.</li>
+      </ol>
+      <div class="table-wrap" style="margin:16px 0;"><table class="dash-table">
+        <tbody>
+          <tr><td>Full Name</td><td>${session.name}</td></tr>
+          <tr><td>Email</td><td>${session.email}</td></tr>
+          <tr><td>Date</td><td>${today}</td></tr>
+        </tbody>
+      </table></div>
+      <p class="mini-note">I declare that I have read this undertaking in full, understand the risks associated with AI Copy Trading, and voluntarily agree to participate. I understand that there are no guaranteed returns, capital is at risk, and no refunds will be provided under any circumstances.</p>
+    </div>
+    <form id="undertakingForm" class="form-grid">
+      <div class="form-field full">
+        <label style="display:flex;align-items:flex-start;gap:8px;">
+          <input type="checkbox" id="undertakingCheckbox" required style="width:auto;margin-top:4px;">
+          <span class="mini-note">I have read, understood, and voluntarily accept all the terms above.</span>
+        </label>
+      </div>
+      <p class="modal-error" id="undertakingError" hidden></p>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="undertakingSubmitBtn">I Agree &amp; Continue</button></div>
+    </form>`;
+}
+
 function renderAiTradeForm() {
   return `
     <p class="mini-note" style="margin-bottom:16px;">Open a <strong>Cent / USDC-Cent account</strong> with <strong>PU Prime</strong> using our link, deposit a minimum of <strong>$200 USDC</strong>, submit the form below, then message us on Telegram — we'll verify and show you how to link your account to our AI Trade system.</p>
@@ -444,12 +482,6 @@ function renderAiTradeForm() {
       <div class="form-field"><label>Trading Account Number</label><input type="text" id="atAccountNumber" placeholder="Your Cent / USDC-Cent account #" required></div>
       <div class="form-field"><label>Deposit Amount (USDC)</label><input type="number" id="atAmount" min="200" step="1" placeholder="200" required></div>
       <div class="form-field full">
-        <label style="display:flex;align-items:flex-start;gap:8px;">
-          <input type="checkbox" id="atUndertaking" required style="width:auto;margin-top:4px;">
-          <span class="mini-note">I understand that forex trading involves substantial risk and that guaranteed profits are never available. I am opening this account and connecting to AI Trade at my own discretion, and I will not hold Forex Money Machine Academy responsible for any trading losses incurred.</span>
-        </label>
-      </div>
-      <div class="form-field full">
         <p class="mini-note">After submitting, message <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a> on Telegram with your account &amp; deposit proof — we'll show you how to link.</p>
       </div>
       <p class="modal-error" id="atError" hidden></p>
@@ -460,6 +492,26 @@ function renderAiTradeForm() {
 async function loadAiTrade() {
   const data = await apiFetch('/ai-trade/mine');
   const el = document.getElementById('aiTradeContent');
+
+  if (!data.undertakingAccepted) {
+    el.innerHTML = renderUndertakingGate();
+    document.getElementById('undertakingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('undertakingSubmitBtn');
+      const errorEl = document.getElementById('undertakingError');
+      submitBtn.disabled = true;
+      errorEl.hidden = true;
+      try {
+        await apiFetch('/ai-trade/accept-undertaking', { method: 'POST' });
+        await loadAiTrade();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+      }
+    });
+    return;
+  }
 
   if (data.aiTradeConnected) {
     el.innerHTML = `<p class="mini-note">✅ You're connected! Your account is live in our AI Trade system.</p>`;
@@ -494,7 +546,6 @@ async function loadAiTrade() {
           broker: document.getElementById('atBroker').value,
           accountNumber: document.getElementById('atAccountNumber').value,
           amount: document.getElementById('atAmount').value,
-          undertakingAccepted: document.getElementById('atUndertaking').checked,
         }),
       });
       await loadAiTrade();
