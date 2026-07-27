@@ -76,6 +76,17 @@ const Auth = {
     sessionStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(AUTH_KEY);
   },
+  // Patches the stored session in place, writing back to whichever storage
+  // (session vs local) currently holds it — never promotes a session-only
+  // login into a persisted one.
+  updateSession(patch) {
+    const store = sessionStorage.getItem(AUTH_KEY) ? sessionStorage : localStorage;
+    const stored = this.getSession();
+    if (!stored) return null;
+    Object.assign(stored, patch);
+    store.setItem(AUTH_KEY, JSON.stringify(stored));
+    return stored;
+  },
   requireRole(role) {
     const session = this.getSession();
     if (!session || session.role !== role) {

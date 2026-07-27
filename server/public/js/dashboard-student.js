@@ -286,8 +286,7 @@ async function loadPendingMembershipRequests() {
 async function refreshMembershipTier() {
   const me = await apiFetch('/auth/me');
   session.membershipTier = me.membershipTier;
-  const stored = Auth.getSession();
-  if (stored) { stored.membershipTier = me.membershipTier; localStorage.setItem('fmm_session', JSON.stringify(stored)); }
+  Auth.updateSession({ membershipTier: me.membershipTier });
   await Promise.all([loadPendingMembershipRequests(), loadVipBookings()]);
   renderDownloads();
   renderMembership();
@@ -671,10 +670,8 @@ document.getElementById('profileForm').addEventListener('submit', async (e) => {
   const whatsappNumber = document.getElementById('profileWhatsapp').value;
   await apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify({ name, country, phone, telegramId, whatsappNumber }) });
 
-  const stored = Auth.getSession();
+  const stored = Auth.updateSession({ name });
   if (stored) {
-    stored.name = name;
-    localStorage.setItem('fmm_session', JSON.stringify(stored));
     document.getElementById('userName').textContent = name;
     document.getElementById('welcomeMsg').textContent = `Welcome back, ${name.split(' ')[0]}!`;
   }
