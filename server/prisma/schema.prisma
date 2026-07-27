@@ -24,6 +24,7 @@ model User {
   signalsAccess  Boolean      @default(false)
   signalsExpiresAt DateTime?
   aiTradeConnected Boolean    @default(false)
+  aiTradeUndertakingAcceptedAt DateTime?
   payments       Payment[]
   enrollments    Enrollment[]
   signalProofs   SignalProof[]
