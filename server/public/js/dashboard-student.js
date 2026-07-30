@@ -114,9 +114,9 @@ loadAnnouncements();
 
 async function loadOverviewStats() {
   const [enrollments, certificates, payments] = await Promise.all([
-    apiFetch('/enrollments/mine'), apiFetch('/certificates/mine'), apiFetch('/payments'),
+    apiFetch('/enrollments/mine'), apiFetch('/certificates/mine'), apiFetch('/payments?mine=true'),
   ]);
-  const pendingCount = payments.filter((p) => p.student === session.name && p.status === 'Pending').length;
+  const pendingCount = payments.filter((p) => p.status === 'Pending').length;
   const stats = [
     { icon: '🎓', num: enrollments.accessible.length, label: 'Enrolled Courses' },
     { icon: '📜', num: certificates.length, label: 'Certificates Earned' },
@@ -279,8 +279,8 @@ document.getElementById('vipForm').addEventListener('submit', async (e) => {
 });
 
 async function loadPendingMembershipRequests() {
-  const all = await apiFetch('/payments');
-  pendingMembershipRequests = all.filter((p) => p.student === session.name && p.status === 'Pending' && p.course.endsWith(' Membership'));
+  const mine = await apiFetch('/payments?mine=true');
+  pendingMembershipRequests = mine.filter((p) => p.status === 'Pending' && p.course.endsWith(' Membership'));
 }
 
 async function refreshMembershipTier() {
@@ -387,8 +387,7 @@ payForm.addEventListener('submit', async (e) => {
 });
 
 async function loadPayments() {
-  const all = await apiFetch('/payments');
-  const mine = all.filter((p) => p.student === session.name);
+  const mine = await apiFetch('/payments?mine=true');
   document.getElementById('paymentRows').innerHTML = mine.length ? mine.map((p) => `
     <tr><td>${new Date(p.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}</td><td>${p.course}</td><td>${p.method}</td><td>${p.amount}</td>
     <td><span class="badge-pill ${p.status === 'Paid' ? 'pill-success' : p.status === 'Pending' ? 'pill-warn' : 'pill-danger'}">${p.status}</span></td><td><a href="${API_BASE}/payments/${p.id}/invoice?token=${session.token}" target="_blank" class="btn btn-outline btn-sm">Invoice</a></td></tr>`).join('')

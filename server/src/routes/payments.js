@@ -10,7 +10,12 @@ const router = express.Router();
 const MEMBERSHIP_TIERS = ['Community'];
 
 router.get('/', requireAuth, async (req, res) => {
-  res.json(await prisma.payment.findMany({ orderBy: { date: 'desc' } }));
+  const mine = req.query.mine === 'true';
+  // Payment records contain every student's amounts, methods and status —
+  // only an admin may list everyone's; a student may only list their own.
+  if (!mine && req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  const where = mine ? { userId: req.user.id } : {};
+  res.json(await prisma.payment.findMany({ where, orderBy: { date: 'desc' } }));
 });
 
 router.get('/:id/invoice', requireAuth, async (req, res) => {
