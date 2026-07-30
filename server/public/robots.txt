@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /login.html
+Disallow: /dashboard-student.html
+Disallow: /dashboard-admin.html
+Disallow: /watch.html
+Disallow: /api/
+
+Sitemap: https://www.vrmoneymagnet.com/sitemap.xml
