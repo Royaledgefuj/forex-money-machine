@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<title>{{TITLE}} | Forex Money Machine Academy</title>
+<meta name="description" content="{{META_DESCRIPTION}}">
+<link rel="canonical" href="{{CANONICAL_URL}}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{TITLE}} | Forex Money Machine Academy">
+<meta property="og:description" content="{{META_DESCRIPTION}}">
+<meta property="og:url" content="{{CANONICAL_URL}}">
+<meta property="og:image" content="https://www.vrcommercesolutions.com/assets/logo.png">
+<meta property="article:published_time" content="{{PUBLISHED_DATE_ISO}}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{TITLE}} | Forex Money Machine Academy">
+<meta name="twitter:description" content="{{META_DESCRIPTION}}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css?v=8">
+<style>
+  .blog-shell{ max-width:760px; margin:0 auto; padding:110px 24px 80px; }
+  .blog-post-head{ margin-bottom:32px; }
+  .blog-post-head h1{ font-size:2rem; margin-bottom:12px; line-height:1.25; }
+  .blog-post-meta{ font-size:.82rem; color:var(--muted-dim); }
+  .blog-post-body{ color: var(--muted); font-size:1rem; line-height:1.85; }
+  .blog-post-body p{ margin-bottom:20px; }
+  .blog-back{ display:inline-block; margin-bottom:24px; font-size:.85rem; color: var(--gold-light); text-decoration:none; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{TITLE_JSON}},
+  "description": {{META_DESCRIPTION_JSON}},
+  "author": { "@type": "Organization", "name": "Forex Money Machine Academy" },
+  "datePublished": "{{PUBLISHED_DATE_ISO}}",
+  "url": "{{CANONICAL_URL}}"
+}
+</script>
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="/index.html" class="brand">
+      <img src="/assets/logo.png" alt="Forex Money Machine Academy" class="brand-logo">
+    </a>
+    <div class="header-actions">
+      <a href="/index.html#tools" class="btn btn-outline">Back to Website</a>
+    </div>
+  </div>
+</header>
+
+<div class="blog-shell">
+  <a href="/blog" class="blog-back">&larr; Back to Blog</a>
+  <div class="blog-post-head">
+    <h1>{{TITLE}}</h1>
+    <p class="blog-post-meta">By {{AUTHOR}} · {{PUBLISHED_DATE_DISPLAY}}</p>
+  </div>
+  <div class="blog-post-body">
+    {{CONTENT_HTML}}
+  </div>
+</div>
+
+</body>
+</html>

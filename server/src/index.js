@@ -42,8 +42,15 @@ app.use('/api/resources', require('./routes/resources'));
 app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/market-quotes', require('./routes/marketQuotes'));
 app.use('/api/signals', require('./routes/xauSignal'));
+app.use('/api/blog', require('./routes/blog'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Server-rendered (not static files) so each blog post and the sitemap get
+// real per-page meta tags/URLs for crawlers and social previews, generated
+// from the database instead of hand-edited on every new post.
+app.use(require('./routes/sitemap'));
+app.use('/blog', require('./routes/blogPages'));
 
 // Serve the static frontend (index.html, login.html, dashboards, css/, js/) from
 // server/public so the whole site deploys as a single Node service — this folder

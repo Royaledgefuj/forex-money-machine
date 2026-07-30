@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<title>Blog | Forex Money Machine Academy</title>
+<meta name="description" content="Free forex trading guides, market breakdowns and trading education from Forex Money Machine Academy.">
+<link rel="canonical" href="https://www.vrcommercesolutions.com/blog">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blog | Forex Money Machine Academy">
+<meta property="og:description" content="Free forex trading guides, market breakdowns and trading education from Forex Money Machine Academy.">
+<meta property="og:url" content="https://www.vrcommercesolutions.com/blog">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css?v=8">
+<style>
+  .blog-shell{ max-width:820px; margin:0 auto; padding:110px 24px 80px; }
+  .blog-head{ text-align:center; margin-bottom:40px; }
+  .blog-head h1{ font-size:2.1rem; margin-bottom:10px; }
+  .blog-head p{ color:var(--muted); font-size:.95rem; }
+  .blog-post-card{
+    display:block; background: var(--card-bg); border:1px solid var(--border); border-radius: var(--radius);
+    padding:24px; margin-bottom:18px; text-decoration:none; color:inherit; transition: border-color .2s ease, transform .2s ease;
+  }
+  .blog-post-card:hover{ border-color: rgba(212,175,55,0.4); transform: translateY(-2px); }
+  .blog-post-card h2{ font-size:1.25rem; margin-bottom:8px; color: var(--white); }
+  .blog-post-card p{ color:var(--muted); font-size:.9rem; line-height:1.6; margin-bottom:10px; }
+  .blog-post-meta{ font-size:.78rem; color:var(--muted-dim); }
+  .blog-empty{ text-align:center; color:var(--muted); padding:60px 0; }
+</style>
+</head>
+<body>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container header-inner">
+    <a href="/index.html" class="brand">
+      <img src="/assets/logo.png" alt="Forex Money Machine Academy" class="brand-logo">
+    </a>
+    <div class="header-actions">
+      <a href="/index.html#tools" class="btn btn-outline">Back to Website</a>
+    </div>
+  </div>
+</header>
+
+<div class="blog-shell">
+  <div class="blog-head">
+    <p class="kicker">Trading Education</p>
+    <h1>Blog</h1>
+    <p>Free guides and breakdowns to help you trade smarter.</p>
+  </div>
+
+  {{POSTS_HTML}}
+</div>
+
+</body>
+</html>

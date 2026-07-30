@@ -15,7 +15,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
   downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade', vipBookings: 'VIP Bookings', testimonials: 'Testimonials',
-  brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log',
+  brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log', blog: 'Blog',
 };
 function showPanel(key) {
   navItems.forEach((n) => n.classList.toggle('active', n.dataset.panel === key));
@@ -604,6 +604,81 @@ document.getElementById('testimonialRows').addEventListener('click', async (e) =
   await Promise.all([loadTestimonials(), loadActivity()]);
 });
 
+// ================= BLOG =================
+let BLOG_POSTS = [];
+async function loadBlog() {
+  BLOG_POSTS = await apiFetch('/blog/admin/all');
+  document.getElementById('blogCount').textContent = `${BLOG_POSTS.length} post${BLOG_POSTS.length === 1 ? '' : 's'}`;
+  document.getElementById('blogRows').innerHTML = BLOG_POSTS.length ? BLOG_POSTS.map((p) => `
+    <div class="list-item">
+      <span class="list-dot"></span>
+      <div><strong>${p.title}</strong><span>${p.published ? `Published ${new Date(p.publishedAt).toLocaleDateString()}` : 'Draft'} · /blog/${p.slug}</span></div>
+      <div class="row-actions">
+        <button class="icon-btn" title="Edit" data-edit="${p.id}">✎</button>
+        <button class="icon-btn" title="${p.published ? 'Unpublish' : 'Publish'}" data-toggle="${p.id}">${p.published ? '🔽' : '🔼'}</button>
+        <button class="icon-btn danger" title="Delete" data-delete="${p.id}">🗑</button>
+      </div>
+    </div>`).join('')
+    : '<p class="empty-note">No blog posts yet — write your first one.</p>';
+}
+
+function resetBlogForm() {
+  document.getElementById('blogForm').reset();
+  document.getElementById('blogEditId').value = '';
+  document.getElementById('blogFormTitle').textContent = 'New Post';
+  document.getElementById('blogCancelEdit').hidden = true;
+}
+
+document.getElementById('blogRows').addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('button[data-edit]');
+  const toggleBtn = e.target.closest('button[data-toggle]');
+  const deleteBtn = e.target.closest('button[data-delete]');
+
+  if (editBtn) {
+    const p = BLOG_POSTS.find((x) => x.id === Number(editBtn.dataset.edit));
+    if (!p) return;
+    document.getElementById('blogEditId').value = p.id;
+    document.getElementById('blogTitle').value = p.title;
+    document.getElementById('blogExcerpt').value = p.excerpt;
+    document.getElementById('blogContent').value = p.content;
+    document.getElementById('blogMeta').value = p.metaDescription;
+    document.getElementById('blogPublished').checked = p.published;
+    document.getElementById('blogFormTitle').textContent = `Editing "${p.title}"`;
+    document.getElementById('blogCancelEdit').hidden = false;
+    return;
+  }
+  if (toggleBtn) {
+    const p = BLOG_POSTS.find((x) => x.id === Number(toggleBtn.dataset.toggle));
+    if (!p) return;
+    await apiFetch(`/blog/${p.id}`, { method: 'PATCH', body: JSON.stringify({ published: !p.published }) });
+  } else if (deleteBtn) {
+    if (!confirm('Delete this blog post?')) return;
+    await apiFetch(`/blog/${deleteBtn.dataset.delete}`, { method: 'DELETE' });
+  } else return;
+  await Promise.all([loadBlog(), loadActivity()]);
+});
+
+document.getElementById('blogCancelEdit').addEventListener('click', resetBlogForm);
+
+document.getElementById('blogForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('blogEditId').value;
+  const body = {
+    title: document.getElementById('blogTitle').value,
+    excerpt: document.getElementById('blogExcerpt').value,
+    content: document.getElementById('blogContent').value,
+    metaDescription: document.getElementById('blogMeta').value,
+    published: document.getElementById('blogPublished').checked,
+  };
+  if (id) {
+    await apiFetch(`/blog/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  } else {
+    await apiFetch('/blog', { method: 'POST', body: JSON.stringify(body) });
+  }
+  resetBlogForm();
+  await Promise.all([loadBlog(), loadActivity()]);
+});
+
 // ================= BROKERS =================
 let BROKERS = [];
 async function loadBrokers() {
@@ -706,7 +781,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadTestimonials(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadTestimonials(), loadBlog(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
