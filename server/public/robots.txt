@@ -6,4 +6,4 @@ Disallow: /dashboard-admin.html
 Disallow: /watch.html
 Disallow: /api/
 
-Sitemap: https://www.vrmoneymagnet.com/sitemap.xml
+Sitemap: https://www.vrcommercesolutions.com/sitemap.xml
