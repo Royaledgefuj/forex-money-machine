@@ -258,7 +258,7 @@ p{ margin:0 0 1em; color: var(--muted); }
   min-width:0; /* grid/flex items default to min-width:auto, which lets unbreakable label text force the column wider than 1fr and overflow the viewport on narrow screens */
 }
 .tool-item:hover{ border-color: rgba(212,175,55,0.4); transform: translateY(-3px); }
-.tool-item > span:not(.tool-icon):not(.tool-tier){ min-width:0; overflow-wrap:break-word; }
+.tool-item > span:not(.tool-icon):not(.tool-tier){ min-width:0; }
 .tool-icon{ font-size:1.3rem; flex-shrink:0; }
 .tool-tier{ margin-left:auto; padding:3px 10px; border-radius:999px; font-size:.68rem; font-weight:700; letter-spacing:.03em; white-space:nowrap; flex-shrink:0; }
 .tier-free{ background: rgba(55,201,138,0.15); color: var(--up); border:1px solid rgba(55,201,138,0.35); }
@@ -322,6 +322,11 @@ p{ margin:0 0 1em; color: var(--muted); }
 .risk-disclaimer{ max-width: 520px; text-align:right; margin:0; }
 
 /* ===== Responsive ===== */
+@media (max-width: 1400px){
+  /* Labels like "TradingView Indicators" need more than a 1/5-width column to
+     wrap cleanly at word breaks instead of running out of room. */
+  .tools-grid{ grid-template-columns: repeat(4,1fr); }
+}
 @media (max-width: 1024px){
   .about-grid{ grid-template-columns: repeat(2,1fr); }
   .testimonials{ grid-template-columns: 1fr; }
