@@ -3,6 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+// None of the ~70 async route handlers in this app wrap their Prisma calls in
+// try/catch, so a rejected promise (e.g. a transient DB error) would otherwise
+// be an unhandled rejection — which crashes the entire Node process and takes
+// the whole site down for every user, not just the one request that failed.
+// This keeps the process alive; the failing request will time out instead of
+// getting a clean 500, since Express 4 doesn't auto-forward async rejections
+// to error middleware. Wrapping each handler (or an asyncHandler utility) is
+// the fuller fix if per-request error responses matter here.
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled promise rejection (request likely failed, server stayed up):', err);
+});
+
 const app = express();
 
 app.use(cors());
