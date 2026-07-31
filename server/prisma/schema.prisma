@@ -211,6 +211,28 @@ model BlogPost {
   updatedAt       DateTime @updatedAt
 }
 
+// Singleton (fixed id: 1) — every number on the admin Analytics panel is
+// manually entered and manually reset by the admin, not computed from real
+// data. This intentionally replaced a mix of live-computed figures (revenue,
+// broker commission) and outright fabricated placeholder numbers (student
+// count, sales chart, traffic sources) that were hardcoded in the dashboard
+// with no backing data source at all.
+model AnalyticsSettings {
+  id                    Int      @id @default(autoincrement())
+  totalRevenue          String   @default("$0")
+  revenueDelta          String   @default("")
+  totalStudents         String   @default("0")
+  studentsDelta         String   @default("")
+  certificatesIssued    String   @default("0")
+  certificatesDelta     String   @default("")
+  brokerCommission      String   @default("$0")
+  brokerCommissionDelta String   @default("")
+  conversionRate        String   @default("0%")
+  monthlySales          Json     @default("[]")
+  trafficSources        Json     @default("[]")
+  updatedAt             DateTime @updatedAt
+}
+
 model ActivityLog {
   id        Int      @id @default(autoincrement())
   text      String
