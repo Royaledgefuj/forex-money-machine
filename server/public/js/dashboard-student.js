@@ -197,14 +197,24 @@ function vipStatusNote() {
   return '';
 }
 
+function renewalNoticeHtml() {
+  if (!session || session.membershipTier !== 'Community' || !session.membershipExpiresAt) return '';
+  const daysRemaining = Math.round((new Date(session.membershipExpiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  if (daysRemaining > 3) return '';
+  const overdueDays = -daysRemaining;
+  return `<div class="card"><p class="mini-note">${daysRemaining < 0
+    ? `⚠️ Your $10/month Community membership expired ${overdueDays} day${overdueDays === 1 ? '' : 's'} ago — renew below to keep your access.`
+    : `⏳ Your $10/month Community membership renews in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} — renew below to avoid losing access.`}</p></div>`;
+}
+
 function renderMembership() {
   const myTier = (session && session.membershipTier) || 'Free';
   document.getElementById('currentTierLabel').textContent = myTier === 'Community' ? 'Community' : 'Free';
 
   const pending = pendingMembershipRequests[0];
-  document.getElementById('pendingRequestNote').innerHTML = pending
+  document.getElementById('pendingRequestNote').innerHTML = (pending
     ? `<div class="card"><p class="mini-note">⏳ Your request for <strong>${pending.course}</strong> is pending admin approval.</p></div>`
-    : '';
+    : '') + renewalNoticeHtml();
 
   const isMember = myTier === 'Community';
   const hasPending = pendingMembershipRequests.some((p) => p.course === 'Community Membership');
@@ -286,6 +296,7 @@ async function loadPendingMembershipRequests() {
 async function refreshMembershipTier() {
   const me = await apiFetch('/auth/me');
   session.membershipTier = me.membershipTier;
+  session.membershipExpiresAt = me.membershipExpiresAt;
   Auth.updateSession({ membershipTier: me.membershipTier });
   await Promise.all([loadPendingMembershipRequests(), loadVipBookings()]);
   renderDownloads();

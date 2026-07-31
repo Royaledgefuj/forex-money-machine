@@ -67,3 +67,4 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Forex Money Machine API listening on http://localhost:${PORT}`));
 
 require('./marketData').startPolling();
+require('./membershipReminders').startMembershipReminderPolling();

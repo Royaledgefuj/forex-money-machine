@@ -112,7 +112,7 @@ router.post('/create-admin', requireAuth, requireAdmin, async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user.id } });
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier, country: user.country, phone: user.phone, telegramId: user.telegramId, whatsappNumber: user.whatsappNumber });
+  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier, membershipExpiresAt: user.membershipExpiresAt, country: user.country, phone: user.phone, telegramId: user.telegramId, whatsappNumber: user.whatsappNumber });
 });
 
 router.patch('/me', requireAuth, async (req, res) => {
@@ -125,7 +125,7 @@ router.patch('/me', requireAuth, async (req, res) => {
   if (whatsappNumber !== undefined) data.whatsappNumber = whatsappNumber;
 
   const user = await prisma.user.update({ where: { id: req.user.id }, data });
-  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier, country: user.country, phone: user.phone, telegramId: user.telegramId, whatsappNumber: user.whatsappNumber });
+  res.json({ id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier, membershipExpiresAt: user.membershipExpiresAt, country: user.country, phone: user.phone, telegramId: user.telegramId, whatsappNumber: user.whatsappNumber });
 });
 
 router.patch('/password', requireAuth, async (req, res) => {

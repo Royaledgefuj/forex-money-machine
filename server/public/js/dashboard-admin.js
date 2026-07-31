@@ -15,7 +15,7 @@ const topbarTitle = document.getElementById('topbarTitle');
 const titleMap = {
   overview: 'Analytics', students: 'Student Management', courses: 'Course Management', live: 'Live Classes',
   downloads: 'Downloads & Tools', certificates: 'Certificates', announcements: 'Announcements', payments: 'Payments', paymentMethods: 'Payment Methods', signals: 'Signals', aitrade: 'AI Trade', vipBookings: 'VIP Bookings', testimonials: 'Testimonials',
-  brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log', blog: 'Blog',
+  brokers: 'Broker Referrals', support: 'Support Tickets', activity: 'Activity Log', blog: 'Blog', membership: 'Membership Renewals',
 };
 function showPanel(key) {
   navItems.forEach((n) => n.classList.toggle('active', n.dataset.panel === key));
@@ -444,6 +444,20 @@ pmForm.addEventListener('submit', async (e) => {
   await Promise.all([loadPaymentMethods(), loadActivity()]);
 });
 
+// ================= MEMBERSHIP RENEWALS ($10/month, auto-reminded) =================
+async function loadMembershipRenewals() {
+  const members = await apiFetch('/membership/renewals');
+  const map = { Active: 'pill-success', 'Due Soon': 'pill-warn', Overdue: 'pill-danger', 'No expiry set': 'pill-muted' };
+  document.getElementById('membershipRenewalRows').innerHTML = members.length ? members.map((m) => `
+    <tr>
+      <td>${m.name}</td>
+      <td>${m.email}</td>
+      <td>${m.membershipExpiresAt ? new Date(m.membershipExpiresAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' }) : '—'}</td>
+      <td><span class="badge-pill ${map[m.status]}">${m.status}${m.daysRemaining !== null ? ` (${m.daysRemaining < 0 ? `${-m.daysRemaining}d overdue` : `${m.daysRemaining}d left`})` : ''}</span></td>
+    </tr>`).join('')
+    : '<tr><td colspan="4"><p class="empty-note">No Community members yet.</p></td></tr>';
+}
+
 // ================= SIGNALS (30-day subscription) =================
 let SIGNALS_STUDENTS = [];
 
@@ -852,7 +866,7 @@ async function renderPopularCourses() {
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadUndertakings(), loadVipBookings(), loadTestimonials(), loadBlog(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadUndertakings(), loadVipBookings(), loadTestimonials(), loadBlog(), loadMembershipRenewals(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([loadAnalytics(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

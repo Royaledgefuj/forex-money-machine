@@ -31,6 +31,7 @@
       <button class="dash-nav-item" data-panel="announcements"><span class="ic">📣</span>Announcements</button>
       <button class="dash-nav-item" data-panel="payments"><span class="ic">💳</span>Payments</button>
       <button class="dash-nav-item" data-panel="paymentMethods"><span class="ic">🏦</span>Payment Methods</button>
+      <button class="dash-nav-item" data-panel="membership"><span class="ic">💎</span>Membership Renewals</button>
       <button class="dash-nav-item" data-panel="signals"><span class="ic">📡</span>Signals</button>
       <button class="dash-nav-item" data-panel="aitrade"><span class="ic">🤖</span>AI Trade</button>
       <button class="dash-nav-item" data-panel="vipBookings"><span class="ic">📅</span>VIP Bookings</button>
@@ -339,6 +340,19 @@
                 <button type="button" class="btn btn-outline" id="pmCancelBtn" hidden>Cancel Edit</button>
               </div>
             </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- MEMBERSHIP RENEWALS -->
+      <section class="dash-panel" data-panel="membership">
+        <div class="card">
+          <div class="card-head"><h3>Community Membership Renewals ($10/month)</h3><span class="mini-note">Students are emailed automatically when due within 3 days or overdue; this mirrors what triggered those emails</span></div>
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead><tr><th>Student</th><th>Email</th><th>Renews / Renewed</th><th>Status</th></tr></thead>
+              <tbody id="membershipRenewalRows"></tbody>
+            </table>
           </div>
         </div>
       </section>

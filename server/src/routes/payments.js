@@ -52,8 +52,18 @@ router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
       // Community membership unlocks tools, live classes and the current batch.
       // Signals are granted separately from the admin Signals tab once the
       // student's partner-broker account is verified (30-day subscription).
-      await prisma.user.update({ where: { id: payment.userId }, data: { membershipTier: tier } });
-      await logActivity(`Upgraded ${payment.student} to ${tier} membership`);
+      const existingUser = await prisma.user.findUnique({ where: { id: payment.userId } });
+      // Renewing early extends from the current expiry, not from today, so
+      // paying a few days before it lapses doesn't lose those days.
+      const base = existingUser.membershipExpiresAt && existingUser.membershipExpiresAt > new Date()
+        ? existingUser.membershipExpiresAt
+        : new Date();
+      const membershipExpiresAt = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await prisma.user.update({
+        where: { id: payment.userId },
+        data: { membershipTier: tier, membershipExpiresAt, lastMembershipReminderAt: null },
+      });
+      await logActivity(`Upgraded ${payment.student} to ${tier} membership (renews ${membershipExpiresAt.toLocaleDateString()})`);
       await enrollUserInCurrentBatch(payment.userId, 'membership');
     } else if (payment.courseId) {
       await enrollUserInCourse(payment.userId, payment.courseId, 'purchase');

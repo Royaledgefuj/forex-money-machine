@@ -1,6 +1,6 @@
 const express = require('express');
 const prisma = require('../prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { TIERS } = require('../membership');
 const { logActivity } = require('../activity');
 const { notifyAdmin } = require('../email');
@@ -10,6 +10,30 @@ const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 
 router.get('/plans', requireAuth, (req, res) => {
   res.json(TIERS);
+});
+
+// Admin — every $10/month Community member with their renewal date, so admin
+// has the same due-soon/overdue visibility the automatic email reminders act on.
+router.get('/renewals', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const members = await prisma.user.findMany({
+      where: { membershipTier: 'Community' },
+      select: { id: true, name: true, email: true, membershipExpiresAt: true },
+      orderBy: { membershipExpiresAt: 'asc' },
+    });
+    const now = Date.now();
+    const withStatus = members.map((m) => {
+      const daysRemaining = m.membershipExpiresAt
+        ? Math.round((new Date(m.membershipExpiresAt).getTime() - now) / (24 * 60 * 60 * 1000))
+        : null;
+      let status = 'No expiry set';
+      if (daysRemaining !== null) status = daysRemaining < 0 ? 'Overdue' : daysRemaining <= 3 ? 'Due Soon' : 'Active';
+      return { ...m, daysRemaining, status };
+    });
+    res.json(withStatus);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not load membership renewals' });
+  }
 });
 
 router.post('/request', requireAuth, async (req, res) => {
