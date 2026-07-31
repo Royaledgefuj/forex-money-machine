@@ -23,6 +23,8 @@ model User {
   whatsappNumber String?
   signalsAccess  Boolean      @default(false)
   signalsExpiresAt DateTime?
+  membershipExpiresAt DateTime? // Community membership is $10/month; renewal reminders fire as this approaches/passes
+  lastMembershipReminderAt DateTime? // throttles reminder emails to at most one every few days
   aiTradeConnected Boolean    @default(false)
   aiTradeUndertakingAcceptedAt DateTime?
   payments       Payment[]
