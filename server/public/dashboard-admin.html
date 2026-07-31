@@ -63,27 +63,28 @@
 
       <!-- ANALYTICS -->
       <section class="dash-panel active" data-panel="overview">
+        <p class="mini-note" style="margin-bottom:16px;">Every figure below is entered manually by you in the "Edit Analytics" form — nothing here is computed automatically.</p>
         <div class="stat-grid">
-          <div class="stat-card"><div class="stat-top"><span class="ic">💰</span><span class="delta up" id="revenueDelta">+18% MoM</span></div><span class="num" id="statTotalRevenue">$84,320</span><span class="label">Revenue (This Month)</span></div>
-          <div class="stat-card"><div class="stat-top"><span class="ic">🧑‍🎓</span><span class="delta up">+312 new</span></div><span class="num">41,208</span><span class="label">Total Students</span></div>
-          <div class="stat-card"><div class="stat-top"><span class="ic">📜</span><span class="delta up">+64 issued</span></div><span class="num">6,142</span><span class="label">Certificates Issued</span></div>
-          <div class="stat-card"><div class="stat-top"><span class="ic">🤝</span><span class="delta up">+9 today</span></div><span class="num" id="statBrokerRevenue">$17,340</span><span class="label">Broker Commission Income</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">💰</span><span class="delta up" id="revenueDelta"></span></div><span class="num" id="statTotalRevenue">$0</span><span class="label">Revenue (This Month)</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">🧑‍🎓</span><span class="delta up" id="studentsDelta"></span></div><span class="num" id="statTotalStudents">0</span><span class="label">Total Students</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">📜</span><span class="delta up" id="certificatesDelta"></span></div><span class="num" id="statCertificatesIssued">0</span><span class="label">Certificates Issued</span></div>
+          <div class="stat-card"><div class="stat-top"><span class="ic">🤝</span><span class="delta up" id="brokerCommissionDelta"></span></div><span class="num" id="statBrokerRevenue">$0</span><span class="label">Broker Commission Income</span></div>
         </div>
 
         <div class="panel-grid">
           <div>
             <div class="card">
-              <div class="card-head"><h3>Monthly Sales</h3><span class="mini-note">Last 6 months</span></div>
+              <div class="card-head"><h3>Monthly Sales</h3><span class="mini-note">Manually entered</span></div>
               <div class="bar-chart" id="salesChart"></div>
             </div>
             <div class="card">
-              <div class="card-head"><h3>Most Popular Courses</h3></div>
+              <div class="card-head"><h3>Most Popular Courses</h3><span class="mini-note">Real — from actual enrollment counts</span></div>
               <div id="popularCourses"></div>
             </div>
           </div>
           <div>
             <div class="card">
-              <div class="card-head"><h3>Revenue by Source</h3><span class="mini-note">This month</span></div>
+              <div class="card-head"><h3>Revenue by Source</h3><span class="mini-note">Manually entered</span></div>
               <div id="revenueBreakdown"></div>
             </div>
             <div class="card">
@@ -93,10 +94,31 @@
             <div class="card">
               <div class="card-head"><h3>Conversion Rate</h3></div>
               <div class="stat-grid" style="grid-template-columns:1fr; margin-bottom:0;">
-                <div class="stat-card"><span class="num">4.8%</span><span class="label">Visitor → Enrolled Student</span></div>
+                <div class="stat-card"><span class="num" id="statConversionRate">0%</span><span class="label">Visitor → Enrolled Student</span></div>
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Edit Analytics</h3><span class="mini-note">Changes appear immediately above; Reset clears everything back to zero</span></div>
+          <form class="form-grid" id="analyticsForm">
+            <div class="form-field"><label>Total Revenue</label><input type="text" id="anTotalRevenue" placeholder="$84,320"></div>
+            <div class="form-field"><label>Revenue Delta</label><input type="text" id="anRevenueDelta" placeholder="+18% MoM"></div>
+            <div class="form-field"><label>Total Students</label><input type="text" id="anTotalStudents" placeholder="41,208"></div>
+            <div class="form-field"><label>Students Delta</label><input type="text" id="anStudentsDelta" placeholder="+312 new"></div>
+            <div class="form-field"><label>Certificates Issued</label><input type="text" id="anCertificatesIssued" placeholder="6,142"></div>
+            <div class="form-field"><label>Certificates Delta</label><input type="text" id="anCertificatesDelta" placeholder="+64 issued"></div>
+            <div class="form-field"><label>Broker Commission</label><input type="text" id="anBrokerCommission" placeholder="$17,340"></div>
+            <div class="form-field"><label>Broker Commission Delta</label><input type="text" id="anBrokerCommissionDelta" placeholder="+9 today"></div>
+            <div class="form-field"><label>Conversion Rate</label><input type="text" id="anConversionRate" placeholder="4.8%"></div>
+            <div class="form-field full"><label>Monthly Sales (format: Month:Value, comma-separated)</label><input type="text" id="anMonthlySales" placeholder="Feb:52,Mar:61,Apr:58,May:70,Jun:76,Jul:84"></div>
+            <div class="form-field full"><label>Traffic Sources (format: Label:Percent, comma-separated)</label><input type="text" id="anTrafficSources" placeholder="YouTube:38,Instagram:24,Direct:18,Google:12,Referral:8"></div>
+            <div class="form-field full" style="display:flex; gap:10px;">
+              <button type="submit" class="btn btn-gold">Save Changes</button>
+              <button type="button" class="btn btn-outline" id="analyticsResetBtn">Reset All to Zero</button>
+            </div>
+          </form>
         </div>
       </section>
 

@@ -365,7 +365,7 @@ document.getElementById('txnRows').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-approve]');
   if (!btn) return;
   await apiFetch(`/payments/${btn.dataset.approve}`, { method: 'PATCH', body: JSON.stringify({ status: 'Paid' }) });
-  await Promise.all([loadPayments(), loadActivity(), refreshRevenue()]);
+  await Promise.all([loadPayments(), loadActivity()]);
 });
 
 // ================= PAYMENT METHODS =================
@@ -714,7 +714,7 @@ document.getElementById('brokerRows').addEventListener('click', async (e) => {
   const broker = BROKERS.find((b) => b.id === Number(btn.dataset.id));
   if (!confirm(`Remove broker partner "${broker.name}"?`)) return;
   await apiFetch(`/brokers/${broker.id}`, { method: 'DELETE' });
-  await Promise.all([loadBrokers(), loadActivity(), refreshRevenue()]);
+  await Promise.all([loadBrokers(), loadActivity()]);
 });
 document.getElementById('newBrokerBtn').addEventListener('click', async () => {
   const name = prompt('New broker name:');
@@ -723,26 +723,97 @@ document.getElementById('newBrokerBtn').addEventListener('click', async () => {
   await Promise.all([loadBrokers(), loadActivity()]);
 });
 
-// ================= REVENUE (connects Payments + Broker commissions) =================
-async function refreshRevenue() {
-  const payments = PAYMENTS.length ? PAYMENTS : await loadPayments();
-  const courseSalesRevenue = payments.filter((p) => p.status === 'Paid').reduce((sum, p) => sum + parseAmount(p.amount), 0);
-  const brokerSummary = await apiFetch('/brokers/summary');
-  const brokerCommissionTotal = brokerSummary.commissionTotal;
-  const totalRevenue = courseSalesRevenue + brokerCommissionTotal;
-
-  document.getElementById('statTotalRevenue').textContent = fmtMoney(totalRevenue);
-  document.getElementById('statBrokerRevenue').textContent = fmtMoney(brokerCommissionTotal);
-  document.getElementById('paymentsTotalRevenue').textContent = fmtMoney(totalRevenue);
-
-  const coursePct = totalRevenue ? Math.round((courseSalesRevenue / totalRevenue) * 100) : 0;
-  const brokerPct = 100 - coursePct;
-  const html = `
-    <div class="traffic-row"><span class="traffic-label">Course Sales</span><div class="traffic-bar"><span style="width:${coursePct}%"></span></div><span class="traffic-pct">${fmtMoney(courseSalesRevenue)}</span></div>
-    <div class="traffic-row"><span class="traffic-label">Broker Commissions</span><div class="traffic-bar"><span style="width:${brokerPct}%"></span></div><span class="traffic-pct">${fmtMoney(brokerCommissionTotal)}</span></div>`;
-  document.getElementById('revenueBreakdown').innerHTML = html;
-  document.getElementById('revenueBreakdownPayments').innerHTML = html;
+// ================= ANALYTICS (fully manual — admin enters every figure) =================
+function parseListField(str, valueParser) {
+  return String(str || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const [label, raw] = s.split(':').map((x) => x.trim());
+      return { label, value: valueParser(raw) };
+    });
 }
+
+function renderAnalytics(settings) {
+  document.getElementById('statTotalRevenue').textContent = settings.totalRevenue;
+  document.getElementById('revenueDelta').textContent = settings.revenueDelta;
+  document.getElementById('statTotalStudents').textContent = settings.totalStudents;
+  document.getElementById('studentsDelta').textContent = settings.studentsDelta;
+  document.getElementById('statCertificatesIssued').textContent = settings.certificatesIssued;
+  document.getElementById('certificatesDelta').textContent = settings.certificatesDelta;
+  document.getElementById('statBrokerRevenue').textContent = settings.brokerCommission;
+  document.getElementById('brokerCommissionDelta').textContent = settings.brokerCommissionDelta;
+  document.getElementById('statConversionRate').textContent = settings.conversionRate;
+  document.getElementById('paymentsTotalRevenue').textContent = settings.totalRevenue;
+
+  const sales = settings.monthlySales || [];
+  const maxSale = Math.max(1, ...sales.map((s) => s.value));
+  document.getElementById('salesChart').innerHTML = sales.length ? sales.map((s) => `
+    <div class="bar-col">
+      <span class="bar-value">$${s.value}k</span>
+      <div class="bar" style="height:${(s.value / maxSale) * 100}%"></div>
+      <span class="bar-label">${s.label}</span>
+    </div>`).join('') : '<p class="empty-note">No sales data entered yet.</p>';
+
+  const revenueHtml = `
+    <div class="traffic-row"><span class="traffic-label">Course Sales / Total</span><div class="traffic-bar"><span style="width:100%"></span></div><span class="traffic-pct">${settings.totalRevenue}</span></div>
+    <div class="traffic-row"><span class="traffic-label">Broker Commissions</span><div class="traffic-bar"><span style="width:${settings.totalRevenue ? Math.min(100, Math.round((parseAmount(settings.brokerCommission) / Math.max(1, parseAmount(settings.totalRevenue))) * 100)) : 0}%"></span></div><span class="traffic-pct">${settings.brokerCommission}</span></div>`;
+  document.getElementById('revenueBreakdown').innerHTML = revenueHtml;
+  document.getElementById('revenueBreakdownPayments').innerHTML = revenueHtml;
+
+  const traffic = settings.trafficSources || [];
+  document.getElementById('trafficSources').innerHTML = traffic.length ? traffic.map((t) => `
+    <div class="traffic-row"><span class="traffic-label">${t.label}</span><div class="traffic-bar"><span style="width:${t.value}%"></span></div><span class="traffic-pct">${t.value}%</span></div>`).join('') : '<p class="empty-note">No traffic data entered yet.</p>';
+}
+
+function fillAnalyticsForm(settings) {
+  document.getElementById('anTotalRevenue').value = settings.totalRevenue;
+  document.getElementById('anRevenueDelta').value = settings.revenueDelta;
+  document.getElementById('anTotalStudents').value = settings.totalStudents;
+  document.getElementById('anStudentsDelta').value = settings.studentsDelta;
+  document.getElementById('anCertificatesIssued').value = settings.certificatesIssued;
+  document.getElementById('anCertificatesDelta').value = settings.certificatesDelta;
+  document.getElementById('anBrokerCommission').value = settings.brokerCommission;
+  document.getElementById('anBrokerCommissionDelta').value = settings.brokerCommissionDelta;
+  document.getElementById('anConversionRate').value = settings.conversionRate;
+  document.getElementById('anMonthlySales').value = (settings.monthlySales || []).map((s) => `${s.label}:${s.value}`).join(',');
+  document.getElementById('anTrafficSources').value = (settings.trafficSources || []).map((t) => `${t.label}:${t.value}`).join(',');
+}
+
+async function loadAnalytics() {
+  const settings = await apiFetch('/analytics');
+  renderAnalytics(settings);
+  fillAnalyticsForm(settings);
+}
+
+document.getElementById('analyticsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = {
+    totalRevenue: document.getElementById('anTotalRevenue').value,
+    revenueDelta: document.getElementById('anRevenueDelta').value,
+    totalStudents: document.getElementById('anTotalStudents').value,
+    studentsDelta: document.getElementById('anStudentsDelta').value,
+    certificatesIssued: document.getElementById('anCertificatesIssued').value,
+    certificatesDelta: document.getElementById('anCertificatesDelta').value,
+    brokerCommission: document.getElementById('anBrokerCommission').value,
+    brokerCommissionDelta: document.getElementById('anBrokerCommissionDelta').value,
+    conversionRate: document.getElementById('anConversionRate').value,
+    monthlySales: parseListField(document.getElementById('anMonthlySales').value, (v) => Number(v) || 0),
+    trafficSources: parseListField(document.getElementById('anTrafficSources').value, (v) => Number(v) || 0),
+  };
+  const settings = await apiFetch('/analytics', { method: 'PATCH', body: JSON.stringify(body) });
+  renderAnalytics(settings);
+  await loadActivity();
+});
+
+document.getElementById('analyticsResetBtn').addEventListener('click', async () => {
+  if (!confirm('Reset every analytics figure back to zero? This cannot be undone.')) return;
+  const settings = await apiFetch('/analytics/reset', { method: 'POST' });
+  renderAnalytics(settings);
+  fillAnalyticsForm(settings);
+  await loadActivity();
+});
 
 // ================= SUPPORT TICKETS =================
 async function loadTickets() {
@@ -773,28 +844,11 @@ async function renderPopularCourses() {
     <div class="list-item"><span class="list-dot"></span><div><strong>${c.name}</strong><span>${c.students.toLocaleString()} students enrolled</span></div></div>`).join('');
 }
 
-// ================= Illustrative-only (no backing model yet) =================
-const SALES = [
-  { m: 'Feb', v: 52 }, { m: 'Mar', v: 61 }, { m: 'Apr', v: 58 }, { m: 'May', v: 70 }, { m: 'Jun', v: 76 }, { m: 'Jul', v: 84 },
-];
-const maxSale = Math.max(...SALES.map((s) => s.v));
-document.getElementById('salesChart').innerHTML = SALES.map((s) => `
-  <div class="bar-col">
-    <span class="bar-value">$${s.v}k</span>
-    <div class="bar" style="height:${(s.v / maxSale) * 100}%"></div>
-    <span class="bar-label">${s.m}</span>
-  </div>`).join('');
-const TRAFFIC = [
-  { label: 'YouTube', pct: 38 }, { label: 'Instagram', pct: 24 }, { label: 'Direct', pct: 18 }, { label: 'Google', pct: 12 }, { label: 'Referral', pct: 8 },
-];
-document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
-  <div class="traffic-row"><span class="traffic-label">${t.label}</span><div class="traffic-bar"><span style="width:${t.pct}%"></span></div><span class="traffic-pct">${t.pct}%</span></div>`).join('');
-
 // ================= Boot =================
 (async function init() {
   try {
     await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadUndertakings(), loadVipBookings(), loadTestimonials(), loadBlog(), loadBrokers(), loadTickets(), loadActivity()]);
-    await Promise.all([refreshRevenue(), renderPopularCourses()]);
+    await Promise.all([loadAnalytics(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);
     alert('Could not load dashboard data. Is the API server running on http://localhost:4000?');

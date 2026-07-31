@@ -43,6 +43,7 @@ app.use('/api/certificates', require('./routes/certificates'));
 app.use('/api/market-quotes', require('./routes/marketQuotes'));
 app.use('/api/signals', require('./routes/xauSignal'));
 app.use('/api/blog', require('./routes/blog'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
