@@ -279,7 +279,12 @@ async function loadCertificates() {
   const [certs, students] = await Promise.all([apiFetch('/certificates'), apiFetch('/students')]);
   CERTIFICATES = certs;
 
-  document.getElementById('certStudent').innerHTML = students.map((s) => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+  // Already-certified students shouldn't appear again in the "issue new" list.
+  const certifiedIds = new Set(CERTIFICATES.map((c) => c.userId));
+  const available = students.filter((s) => !certifiedIds.has(s.id));
+  document.getElementById('certStudent').innerHTML = available.length
+    ? available.map((s) => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('')
+    : '<option value="" disabled selected>All students already have a certificate</option>';
 
   document.getElementById('certificateRows').innerHTML = CERTIFICATES.length ? CERTIFICATES.map((c) => `
     <tr><td>${c.user.name}</td><td>${c.programName}</td><td>${c.batchName}</td><td>${c.completionDate}</td><td>${c.certificateNumber}</td>
