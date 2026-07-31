@@ -525,6 +525,18 @@ document.getElementById('aiTradeRows').addEventListener('click', async (e) => {
   await Promise.all([loadAiTrade(), loadActivity()]);
 });
 
+async function loadUndertakings() {
+  const users = await apiFetch('/ai-trade/undertakings');
+  document.getElementById('undertakingRows').innerHTML = users.length ? users.map((u) => `
+    <tr>
+      <td>${u.name}</td>
+      <td>${u.email}</td>
+      <td>${new Date(u.aiTradeUndertakingAcceptedAt).toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+      <td><span class="badge-pill ${u.aiTradeConnected ? 'pill-success' : 'pill-muted'}">${u.aiTradeConnected ? 'Connected' : 'Not yet'}</span></td>
+    </tr>`).join('')
+    : '<tr><td colspan="4"><p class="empty-note">No students have signed the undertaking yet.</p></td></tr>';
+}
+
 // ================= VIP BOOKINGS =================
 let VIP_BOOKINGS = [];
 async function loadVipBookings() {
@@ -781,7 +793,7 @@ document.getElementById('trafficSources').innerHTML = TRAFFIC.map((t) => `
 // ================= Boot =================
 (async function init() {
   try {
-    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadVipBookings(), loadTestimonials(), loadBlog(), loadBrokers(), loadTickets(), loadActivity()]);
+    await Promise.all([loadStudents(), loadCourses(), loadLive(), loadResources(), loadCertificates(), loadAnnouncements(), loadPayments(), loadPaymentMethods(), loadSignals(), loadAiTrade(), loadUndertakings(), loadVipBookings(), loadTestimonials(), loadBlog(), loadBrokers(), loadTickets(), loadActivity()]);
     await Promise.all([refreshRevenue(), renderPopularCourses()]);
   } catch (err) {
     console.error('Failed to load dashboard data:', err);

@@ -72,6 +72,20 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
   res.json(requests);
 });
 
+// Admin — every student who has signed the risk undertaking, independent of
+// whether they've gone on to submit a broker/deposit request. The requests
+// list above only shows submitted requests, so a student who signs but never
+// submits would otherwise be invisible — this is the audit trail for the
+// legal agreement itself.
+router.get('/undertakings', requireAuth, requireAdmin, async (req, res) => {
+  const users = await prisma.user.findMany({
+    where: { aiTradeUndertakingAcceptedAt: { not: null } },
+    select: { id: true, name: true, email: true, aiTradeUndertakingAcceptedAt: true, aiTradeConnected: true },
+    orderBy: { aiTradeUndertakingAcceptedAt: 'desc' },
+  });
+  res.json(users);
+});
+
 router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = Number(req.params.id);
   const { status } = req.body;
