@@ -280,16 +280,27 @@ document.getElementById('resourceForm').addEventListener('submit', async (e) => 
 
 // ================= CERTIFICATES =================
 let CERTIFICATES = [];
+let ALL_STUDENTS = [];
+
+// A student only disappears from the dropdown for the batch they've already
+// been certified in — completing a later batch still lets them be selected.
+function renderCertStudentOptions() {
+  const batch = document.getElementById('certBatch').value.trim().toLowerCase();
+  const certifiedForBatch = new Set(
+    CERTIFICATES.filter((c) => batch && c.batchName.trim().toLowerCase() === batch).map((c) => c.userId),
+  );
+  const available = ALL_STUDENTS.filter((s) => !certifiedForBatch.has(s.id));
+  document.getElementById('certStudent').innerHTML = available.length
+    ? available.map((s) => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('')
+    : '<option value="" disabled selected>All students already have a certificate for this batch</option>';
+}
+document.getElementById('certBatch').addEventListener('input', renderCertStudentOptions);
+
 async function loadCertificates() {
   const [certs, students] = await Promise.all([apiFetch('/certificates'), apiFetch('/students')]);
   CERTIFICATES = certs;
-
-  // Already-certified students shouldn't appear again in the "issue new" list.
-  const certifiedIds = new Set(CERTIFICATES.map((c) => c.userId));
-  const available = students.filter((s) => !certifiedIds.has(s.id));
-  document.getElementById('certStudent').innerHTML = available.length
-    ? available.map((s) => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('')
-    : '<option value="" disabled selected>All students already have a certificate</option>';
+  ALL_STUDENTS = students;
+  renderCertStudentOptions();
 
   document.getElementById('certificateRows').innerHTML = CERTIFICATES.length ? CERTIFICATES.map((c) => `
     <tr><td>${c.user.name}</td><td>${c.programName}</td><td>${c.batchName}</td><td>${c.completionDate}</td><td>${c.certificateNumber}</td>
@@ -326,6 +337,7 @@ document.getElementById('certificateForm').addEventListener('submit', async (e) 
     await Promise.all([loadCertificates(), loadActivity()]);
     document.getElementById('certBatch').value = '';
     document.getElementById('certDate').value = '';
+    renderCertStudentOptions();
   } catch (err) {
     alert('Could not issue certificate: ' + err.message);
   } finally {
