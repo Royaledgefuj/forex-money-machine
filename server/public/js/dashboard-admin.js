@@ -120,8 +120,13 @@ document.getElementById('courseRows').addEventListener('click', async (e) => {
   const i = Number(btn.dataset.i);
   const course = COURSES[i];
   if (btn.dataset.action === 'edit') {
-    const newPrice = prompt(`New price for "${course.name}"`, course.price);
-    if (newPrice) await apiFetch(`/courses/${course.id}`, { method: 'PATCH', body: JSON.stringify({ price: newPrice }) });
+    const newName = prompt('Course name', course.name);
+    if (newName === null) return; // cancelled
+    const newPrice = prompt(`Price for "${newName}"`, course.price);
+    if (newPrice === null) return; // cancelled
+    await apiFetch(`/courses/${course.id}`, { method: 'PATCH', body: JSON.stringify({ name: newName, price: newPrice }) });
+    await Promise.all([loadCourses(), loadActivity()]);
+    return;
   }
   if (btn.dataset.action === 'delete') {
     if (!confirm(`Delete course "${course.name}"?`)) return;
