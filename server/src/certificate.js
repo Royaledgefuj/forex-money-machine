@@ -9,6 +9,21 @@ const NAVY = '#0A0D14';
 const CREAM = '#FBF8F0';
 const MUTED = '#5A5240';
 
+// Shrinks font size until the text fits on a single line within maxWidth,
+// so long names never wrap onto a second line and collide with the text below.
+// pdfkit's widthOfString() has no size override — it always measures at
+// doc._fontSize, so each candidate size must actually be set before measuring.
+function fitFontSize(doc, text, font, maxSize, minSize, maxWidth) {
+  doc.font(font);
+  let size = maxSize;
+  doc.fontSize(size);
+  while (size > minSize && doc.widthOfString(text) > maxWidth) {
+    size -= 1;
+    doc.fontSize(size);
+  }
+  return size;
+}
+
 function drawStar(doc, cx, cy, outerR, innerR, color) {
   const points = [];
   for (let i = 0; i < 10; i++) {
@@ -51,8 +66,10 @@ function renderCertificate(stream, { studentName, programName, batchName, comple
   doc.font('Helvetica').fontSize(13).fillColor(MUTED)
     .text('This certifies that', 0, 176, { width: W, align: 'center' });
 
-  doc.font('Script').fontSize(52).fillColor(NAVY)
-    .text(studentName, 0, 198, { width: W, align: 'center' });
+  const nameMaxWidth = W - 200;
+  const nameFontSize = fitFontSize(doc, studentName, 'Script', 52, 22, nameMaxWidth);
+  doc.font('Script').fontSize(nameFontSize).fillColor(NAVY)
+    .text(studentName, 0, 198 + (52 - nameFontSize) * 0.4, { width: W, align: 'center' });
 
   doc.lineWidth(0.6).strokeColor(GOLD).moveTo(W / 2 - 170, 262).lineTo(W / 2 + 170, 262).stroke();
 
