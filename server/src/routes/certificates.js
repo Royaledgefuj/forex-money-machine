@@ -6,10 +6,22 @@ const { renderCertificate } = require('../certificate');
 
 const router = express.Router();
 
+// A raw count() breaks the moment any certificate is ever deleted (the
+// "Revoke" button) — the recycled count collides with a still-existing
+// certificateNumber and hits the unique constraint. Basing it on the highest
+// number actually in use this year is immune to gaps from deletions.
 async function nextCertificateNumber() {
   const year = new Date().getFullYear();
-  const count = await prisma.certificate.count();
-  return `FMM-${year}-${String(count + 1).padStart(5, '0')}`;
+  const prefix = `FMM-${year}-`;
+  const certs = await prisma.certificate.findMany({
+    where: { certificateNumber: { startsWith: prefix } },
+    select: { certificateNumber: true },
+  });
+  const maxNum = certs.reduce((max, c) => {
+    const n = parseInt(c.certificateNumber.slice(prefix.length), 10);
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+  return `${prefix}${String(maxNum + 1).padStart(5, '0')}`;
 }
 
 router.get('/mine', requireAuth, async (req, res) => {
@@ -22,23 +34,27 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post('/', requireAuth, requireAdmin, async (req, res) => {
-  const { userId, programName, batchName, completionDate } = req.body;
-  if (!userId || !programName || !batchName || !completionDate) {
-    return res.status(400).json({ error: 'userId, programName, batchName and completionDate are required' });
-  }
-  const student = await prisma.user.findUnique({ where: { id: Number(userId) } });
-  if (!student) return res.status(404).json({ error: 'Student not found' });
+  try {
+    const { userId, programName, batchName, completionDate } = req.body;
+    if (!userId || !programName || !batchName || !completionDate) {
+      return res.status(400).json({ error: 'userId, programName, batchName and completionDate are required' });
+    }
+    const student = await prisma.user.findUnique({ where: { id: Number(userId) } });
+    if (!student) return res.status(404).json({ error: 'Student not found' });
 
-  const certificate = await prisma.certificate.create({
-    data: {
-      userId: student.id,
-      studentName: student.name,
-      programName, batchName, completionDate,
-      certificateNumber: await nextCertificateNumber(),
-    },
-  });
-  await logActivity(`Issued certificate ${certificate.certificateNumber} to ${student.name}`);
-  res.status(201).json(certificate);
+    const certificate = await prisma.certificate.create({
+      data: {
+        userId: student.id,
+        studentName: student.name,
+        programName, batchName, completionDate,
+        certificateNumber: await nextCertificateNumber(),
+      },
+    });
+    await logActivity(`Issued certificate ${certificate.certificateNumber} to ${student.name}`);
+    res.status(201).json(certificate);
+  } catch (err) {
+    res.status(500).json({ error: 'Could not issue certificate — please try again' });
+  }
 });
 
 router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
