@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { notifyAdmin, sendMail, isEmailConfigured } = require('../email');
+const { notifyAdmin, sendMail } = require('../email');
 
 const router = express.Router();
 
@@ -16,75 +16,28 @@ function publicUser(user) {
   return { id: user.id, email: user.email, name: user.name, role: user.role, membershipTier: user.membershipTier };
 }
 
-// In-memory 2FA codes — short-lived by nature, no need to persist across restarts.
-// Admin logins only. If email isn't configured, 2FA is skipped entirely (fail
-// open) so a missing SMTP setup can never lock the only admin account out.
-const pending2FA = new Map(); // userId -> { code, expiresAt }
-const CODE_TTL_MS = 10 * 60 * 1000;
-
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 const SITE_URL = 'https://www.vrcommercesolutions.com';
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
-  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-  if (!user) return res.status(401).json({ error: 'Invalid email or password' });
+    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
 
-  if (user.role === 'admin' && isEmailConfigured()) {
-    const code = String(crypto.randomInt(100000, 1000000));
-    pending2FA.set(user.id, { code, expiresAt: Date.now() + CODE_TTL_MS });
-    const sendPromise = sendMail(
-      user.email,
-      'Your Forex Money Machine Academy login code',
-      `<p>Your verification code is:</p><h2 style="letter-spacing:4px;">${code}</h2><p>This code expires in 10 minutes. If you didn't request this, ignore this email.</p>`,
-    );
-    // Gmail's SMTP handshake from this host can take minutes even on success
-    // (observed on the forgot-password flow) — don't stall the whole login on
-    // it. Give it a few seconds to fail fast (e.g. bad credentials); beyond
-    // that, assume it's just slow and let it keep sending in the background
-    // rather than leaving the admin staring at a spinner for minutes.
-    const timedOut = Symbol('timeout');
-    const result = await Promise.race([
-      sendPromise,
-      new Promise((resolve) => setTimeout(() => resolve(timedOut), 8000)),
-    ]);
-
-    if (result === false) {
-      // Failed fast — fail open rather than lock the admin out.
-      pending2FA.delete(user.id);
-    } else {
-      if (result === timedOut) sendPromise.catch((err) => console.error('[login 2FA] sendMail failed:', err.message));
-      return res.json({ requires2FA: true, userId: user.id });
-    }
+    const token = signToken(user);
+    res.json({ token, user: publicUser(user) });
+  } catch (err) {
+    // Without this, a database error here was an unhandled rejection that
+    // never sent a response — the single most critical request in the app
+    // would just hang forever instead of failing with a clear error.
+    res.status(500).json({ error: 'Could not log in right now — please try again' });
   }
-
-  const token = signToken(user);
-  res.json({ token, user: publicUser(user) });
-});
-
-router.post('/verify-2fa', async (req, res) => {
-  const { userId, code } = req.body;
-  const id = Number(userId);
-  if (!id || !code) return res.status(400).json({ error: 'userId and code are required' });
-
-  const entry = pending2FA.get(id);
-  if (!entry || entry.expiresAt < Date.now()) {
-    pending2FA.delete(id);
-    return res.status(401).json({ error: 'Code expired — please log in again' });
-  }
-  if (entry.code !== String(code).trim()) return res.status(401).json({ error: 'Incorrect code' });
-
-  pending2FA.delete(id);
-  const user = await prisma.user.findUnique({ where: { id } });
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const token = signToken(user);
-  res.json({ token, user: publicUser(user) });
 });
 
 router.post('/register', async (req, res) => {

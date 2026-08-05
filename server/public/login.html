@@ -52,16 +52,6 @@
       </div>
     </form>
 
-    <form id="twoFactorForm" class="auth-form" data-panel="twofactor" hidden>
-      <p class="auth-sub" style="margin-bottom:16px;">We emailed you a 6-digit verification code. Enter it below to finish logging in.</p>
-      <label>Verification Code
-        <input type="text" id="twoFactorCode" placeholder="123456" inputmode="numeric" maxlength="6" required autofocus>
-      </label>
-      <p class="auth-error" id="twoFactorError" hidden></p>
-      <button type="submit" class="btn btn-gold btn-lg auth-submit">Verify &amp; Log In</button>
-      <p class="auth-note"><a href="#" id="backToLoginLink" class="auth-link">Back to login</a></p>
-    </form>
-
     <form id="forgotPasswordForm" class="auth-form" data-panel="forgot" hidden>
       <p class="auth-sub" style="margin-bottom:16px;">Enter your account email and we'll send you a link to set a new password.</p>
       <label>Email Address
@@ -120,8 +110,6 @@
     window.location.href = session.role === 'admin' ? 'dashboard-admin.html' : 'dashboard-student.html';
   }
 
-  let pending2FA = null; // { userId, remember }
-
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
@@ -132,13 +120,7 @@
     submitBtn.disabled = true;
     try {
       const session = await Auth.login(email, password, remember);
-      if (session && session.requires2FA) {
-        pending2FA = { userId: session.userId, remember };
-        errorEl.hidden = true;
-        document.getElementById('loginForm').hidden = true;
-        document.getElementById('twoFactorForm').hidden = false;
-        document.getElementById('twoFactorCode').focus();
-      } else if (session) {
+      if (session) {
         errorEl.hidden = true;
         goToDashboard(session);
       } else {
@@ -148,35 +130,7 @@
       errorEl.textContent = 'Could not reach the server. Is the API running?';
       errorEl.hidden = false;
       submitBtn.disabled = false;
-    } finally {
-      if (!pending2FA) submitBtn.disabled = false;
     }
-  });
-
-  document.getElementById('twoFactorForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!pending2FA) return;
-    const code = document.getElementById('twoFactorCode').value.trim();
-    const errorEl = document.getElementById('twoFactorError');
-    const submitBtn = e.target.querySelector('.auth-submit');
-    submitBtn.disabled = true;
-    try {
-      const session = await Auth.verify2fa(pending2FA.userId, code, pending2FA.remember);
-      errorEl.hidden = true;
-      goToDashboard(session);
-    } catch (err) {
-      errorEl.textContent = err.message;
-      errorEl.hidden = false;
-      submitBtn.disabled = false;
-    }
-  });
-
-  document.getElementById('backToLoginLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    pending2FA = null;
-    document.getElementById('twoFactorForm').hidden = true;
-    document.getElementById('loginForm').hidden = false;
-    document.getElementById('loginForm').querySelector('.auth-submit').disabled = false;
   });
 
   document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
