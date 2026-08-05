@@ -126,11 +126,15 @@ router.post('/forgot-password', async (req, res) => {
       const resetTokenExpiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
       await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
       const link = `${SITE_URL}/reset-password.html?token=${resetToken}`;
-      await sendMail(
+      // Fire-and-forget: Gmail's SMTP handshake from this host can take minutes
+      // (observed, not just a timeout risk), and the token is already saved —
+      // making the browser wait on the send would look like the button just
+      // hung with no feedback, when the actual reset link is already valid.
+      sendMail(
         user.email,
         'Reset your Forex Money Machine Academy password',
         `<p>Hi ${user.name},</p><p>Click the link below to set a new password. This link expires in 1 hour.</p><p><a href="${link}">${link}</a></p><p>If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
-      );
+      ).catch((err) => console.error('[forgot-password] sendMail failed:', err.message));
     }
     res.json({ ok: true, message: 'If an account exists for that email, a reset link has been sent.' });
   } catch (err) {
