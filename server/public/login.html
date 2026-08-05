@@ -39,7 +39,7 @@
       </label>
       <div class="auth-row">
         <label class="checkbox"><input type="checkbox" id="rememberMe"> Remember me</label>
-        <a href="#" class="auth-link">Forgot password?</a>
+        <a href="#" class="auth-link" id="forgotPasswordLink">Forgot password?</a>
       </div>
       <p class="auth-error" id="loginError" hidden>Enter a valid email and a password (4+ characters).</p>
       <button type="submit" class="btn btn-gold btn-lg auth-submit">Log In</button>
@@ -60,6 +60,17 @@
       <p class="auth-error" id="twoFactorError" hidden></p>
       <button type="submit" class="btn btn-gold btn-lg auth-submit">Verify &amp; Log In</button>
       <p class="auth-note"><a href="#" id="backToLoginLink" class="auth-link">Back to login</a></p>
+    </form>
+
+    <form id="forgotPasswordForm" class="auth-form" data-panel="forgot" hidden>
+      <p class="auth-sub" style="margin-bottom:16px;">Enter your account email and we'll send you a link to set a new password.</p>
+      <label>Email Address
+        <input type="email" id="forgotEmail" placeholder="you@example.com" required>
+      </label>
+      <p class="auth-error" id="forgotError" hidden></p>
+      <p class="auth-note" id="forgotSuccess" hidden>If an account exists for that email, a reset link has been sent — check your inbox.</p>
+      <button type="submit" class="btn btn-gold btn-lg auth-submit" id="forgotSubmitBtn">Send Reset Link</button>
+      <p class="auth-note"><a href="#" id="backToLoginFromForgotLink" class="auth-link">Back to login</a></p>
     </form>
 
     <form id="signupForm" class="auth-form" data-panel="signup" hidden>
@@ -166,6 +177,35 @@
     document.getElementById('twoFactorForm').hidden = true;
     document.getElementById('loginForm').hidden = false;
     document.getElementById('loginForm').querySelector('.auth-submit').disabled = false;
+  });
+
+  document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('loginForm').hidden = true;
+    document.getElementById('forgotPasswordForm').hidden = false;
+  });
+  document.getElementById('backToLoginFromForgotLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('forgotPasswordForm').hidden = true;
+    document.getElementById('loginForm').hidden = false;
+  });
+  document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value;
+    const errorEl = document.getElementById('forgotError');
+    const successEl = document.getElementById('forgotSuccess');
+    const submitBtn = document.getElementById('forgotSubmitBtn');
+    errorEl.hidden = true;
+    successEl.hidden = true;
+    submitBtn.disabled = true;
+    try {
+      await apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+      successEl.hidden = false;
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      submitBtn.disabled = false;
+    }
   });
 
   document.getElementById('signupForm').addEventListener('submit', async (e) => {

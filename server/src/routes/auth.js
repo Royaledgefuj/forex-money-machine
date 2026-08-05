@@ -22,6 +22,9 @@ function publicUser(user) {
 const pending2FA = new Map(); // userId -> { code, expiresAt }
 const CODE_TTL_MS = 10 * 60 * 1000;
 
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
+const SITE_URL = 'https://www.vrcommercesolutions.com';
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
@@ -107,6 +110,51 @@ router.post('/create-admin', requireAuth, requireAdmin, async (req, res) => {
     : await prisma.user.create({ data: { email: normalizedEmail, passwordHash, name, role: 'admin', status: 'Active' } });
 
   res.status(existing ? 200 : 201).json({ id: user.id, email: user.email, name: user.name, role: user.role, promoted: !!existing });
+});
+
+// Always responds the same way regardless of whether the email matches an
+// account — otherwise this endpoint could be used to discover which emails
+// have accounts registered.
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await prisma.user.update({ where: { id: user.id }, data: { resetToken, resetTokenExpiresAt } });
+      const link = `${SITE_URL}/reset-password.html?token=${resetToken}`;
+      await sendMail(
+        user.email,
+        'Reset your Forex Money Machine Academy password',
+        `<p>Hi ${user.name},</p><p>Click the link below to set a new password. This link expires in 1 hour.</p><p><a href="${link}">${link}</a></p><p>If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
+      );
+    }
+    res.json({ ok: true, message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not process this request — please try again' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password are required' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'New password must be at least 6 characters' });
+
+    const user = await prisma.user.findUnique({ where: { resetToken: token } });
+    if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt < new Date()) {
+      return res.status(400).json({ error: 'This reset link is invalid or has expired. Please request a new one.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash, resetToken: null, resetTokenExpiresAt: null } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not reset your password — please try again' });
+  }
 });
 
 router.get('/me', requireAuth, async (req, res) => {

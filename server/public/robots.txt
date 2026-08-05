@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /login.html
+Disallow: /reset-password.html
 Disallow: /dashboard-student.html
 Disallow: /dashboard-admin.html
 Disallow: /watch.html
