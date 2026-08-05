@@ -46,6 +46,10 @@ app.use('/api/blog', require('./routes/blog'));
 app.use('/api/analytics', require('./routes/analytics'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+// Reports only a boolean — never the actual SMTP credentials — so this is
+// safe to leave unauthenticated as a quick way to confirm whether email
+// sending (2FA codes, password resets, membership reminders) is wired up.
+app.get('/api/health/email', (req, res) => res.json({ emailConfigured: require('./email').isEmailConfigured() }));
 
 // Server-rendered (not static files) so each blog post and the sitemap get
 // real per-page meta tags/URLs for crawlers and social previews, generated
