@@ -38,14 +38,29 @@ router.post('/login', async (req, res) => {
   if (user.role === 'admin' && isEmailConfigured()) {
     const code = String(crypto.randomInt(100000, 1000000));
     pending2FA.set(user.id, { code, expiresAt: Date.now() + CODE_TTL_MS });
-    const sent = await sendMail(
+    const sendPromise = sendMail(
       user.email,
       'Your Forex Money Machine Academy login code',
       `<p>Your verification code is:</p><h2 style="letter-spacing:4px;">${code}</h2><p>This code expires in 10 minutes. If you didn't request this, ignore this email.</p>`,
     );
-    if (sent) return res.json({ requires2FA: true, userId: user.id });
-    // Sending failed even though SMTP looked configured — fail open rather than lock the admin out.
-    pending2FA.delete(user.id);
+    // Gmail's SMTP handshake from this host can take minutes even on success
+    // (observed on the forgot-password flow) — don't stall the whole login on
+    // it. Give it a few seconds to fail fast (e.g. bad credentials); beyond
+    // that, assume it's just slow and let it keep sending in the background
+    // rather than leaving the admin staring at a spinner for minutes.
+    const timedOut = Symbol('timeout');
+    const result = await Promise.race([
+      sendPromise,
+      new Promise((resolve) => setTimeout(() => resolve(timedOut), 8000)),
+    ]);
+
+    if (result === false) {
+      // Failed fast — fail open rather than lock the admin out.
+      pending2FA.delete(user.id);
+    } else {
+      if (result === timedOut) sendPromise.catch((err) => console.error('[login 2FA] sendMail failed:', err.message));
+      return res.json({ requires2FA: true, userId: user.id });
+    }
   }
 
   const token = signToken(user);
