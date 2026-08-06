@@ -8,10 +8,30 @@ const AUTH_KEY = 'fmm_session';
 
 const MEMBERSHIP_TIERS = {
   Free: { rank: 0, price: 0 },
-  Community: { rank: 1, price: 10 },
+  // Launch offer: $10/month (normally $25) through end of day Dec 31, 2026.
+  Community: { rank: 1, price: 10, originalPrice: 25, offerValidUntil: '2026-12-31T23:59:59' },
 };
 function tierRank(tier) {
   return MEMBERSHIP_TIERS[tier] ? MEMBERSHIP_TIERS[tier].rank : 0;
+}
+// Mirrors server/src/membership.js — Trading Course & VIP Coaching launch offers.
+const COURSE_OFFER = { price: 150, originalPrice: 250, offerValidUntil: '2026-12-31T23:59:59' };
+const VIP_OFFER = { price: 100, originalPrice: 150, offerValidUntil: '2026-12-31T23:59:59' };
+function offerPrice(offer) {
+  if (offer.offerValidUntil && Date.now() > new Date(offer.offerValidUntil).getTime()) {
+    return offer.originalPrice != null ? offer.originalPrice : offer.price;
+  }
+  return offer.price;
+}
+// Mirrors server/src/membership.js#currentPrice — discounted offer price
+// while active, original price once offerValidUntil has passed.
+function currentPrice(tier) {
+  const t = MEMBERSHIP_TIERS[tier];
+  if (!t) return 0;
+  if (t.offerValidUntil && Date.now() > new Date(t.offerValidUntil).getTime()) {
+    return t.originalPrice != null ? t.originalPrice : t.price;
+  }
+  return t.price;
 }
 
 const Auth = {

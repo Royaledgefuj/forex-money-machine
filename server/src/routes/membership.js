@@ -1,7 +1,7 @@
 const express = require('express');
 const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
-const { TIERS } = require('../membership');
+const { TIERS, currentPrice, COURSE_OFFER, VIP_OFFER } = require('../membership');
 const { logActivity } = require('../activity');
 const { notifyAdmin } = require('../email');
 
@@ -9,7 +9,7 @@ const router = express.Router();
 const VERIFY_TELEGRAM_URL = 'https://t.me/Moneymagnet2026';
 
 router.get('/plans', requireAuth, (req, res) => {
-  res.json(TIERS);
+  res.json({ ...TIERS, Course: COURSE_OFFER, Vip: VIP_OFFER });
 });
 
 // Admin — every $10/month Community member with their renewal date, so admin
@@ -56,7 +56,7 @@ router.post('/request', requireAuth, async (req, res) => {
       course: `${tier} Membership`,
       method,
       reference: reference || null,
-      amount: `$${TIERS[tier].price.toFixed(2)}`,
+      amount: `$${currentPrice(tier).toFixed(2)}`,
       status: 'Pending',
     },
   });

@@ -207,6 +207,19 @@ function renewalNoticeHtml() {
     : `⏳ Your $10/month Community membership renews in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} — renew below to avoid losing access.`}</p></div>`;
 }
 
+function communityPriceLabel() {
+  const price = currentPrice('Community');
+  const tier = MEMBERSHIP_TIERS.Community;
+  const onOffer = tier.originalPrice != null && price < tier.originalPrice;
+  return onOffer ? `$${price} / month (was $${tier.originalPrice})` : `$${price} / month`;
+}
+
+function offerLabel(offer, suffix) {
+  const price = offerPrice(offer);
+  const onOffer = offer.originalPrice != null && price < offer.originalPrice;
+  return onOffer ? `$${price}${suffix} (was $${offer.originalPrice}${suffix})` : `$${price}${suffix}`;
+}
+
 function renderMembership() {
   const myTier = (session && session.membershipTier) || 'Free';
   document.getElementById('currentTierLabel').textContent = myTier === 'Community' ? 'Community' : 'Free';
@@ -230,17 +243,17 @@ function renderMembership() {
 
   document.getElementById('membershipPlans').innerHTML = `
     <div class="download-tile">
-      <div class="dt-top"><h4>Community Membership</h4><span class="badge-pill pill-warn">$10 / month</span></div>
+      <div class="dt-top"><h4>Community Membership</h4><span class="badge-pill pill-warn">${communityPriceLabel()}</span></div>
       <p class="meta">Market analysis · Priority support · Trading signals · All indicators &amp; tools · Live classes &amp; course access</p>
       ${communityAction}
     </div>
     <div class="download-tile">
-      <div class="dt-top"><h4>Trading Course</h4><span class="badge-pill pill-warn">$150 one-time</span></div>
-      <p class="meta"><strong>$150 one-time</strong> — full course &amp; certificate, learning access only (no ongoing support).<br><strong>Or $75 to start + $10 / month</strong> — ongoing course &amp; support; $10 due on the 1st of each month from your second month, uploaded as proof on Telegram for continuous access.</p>
+      <div class="dt-top"><h4>Trading Course</h4><span class="badge-pill pill-warn">${offerLabel(COURSE_OFFER, ' one-time')}</span></div>
+      <p class="meta"><strong>$${offerPrice(COURSE_OFFER)} one-time</strong> — full course &amp; certificate, learning access only (no ongoing support).<br><strong>Or $75 to start + $10 / month</strong> — ongoing course &amp; support; $10 due on the 1st of each month from your second month, uploaded as proof on Telegram for continuous access.</p>
       <button class="btn btn-gold btn-sm" data-goto-courses>View Course</button>
     </div>
     <div class="download-tile">
-      <div class="dt-top"><h4>VIP Coaching</h4><span class="badge-pill pill-warn">$100 / hour</span></div>
+      <div class="dt-top"><h4>VIP Coaching</h4><span class="badge-pill pill-warn">${offerLabel(VIP_OFFER, ' / hour')}</span></div>
       <p class="meta">1-on-1 mindset &amp; psychology coaching · $150 package available</p>
       ${vipStatusNote()}
       ${vipAction}
@@ -258,7 +271,7 @@ document.getElementById('membershipPlans').addEventListener('click', (e) => {
   }
   const btn = e.target.closest('button[data-request-tier]');
   if (!btn) return;
-  openPaymentModal({ kind: 'membership', tier: 'Community', name: 'Community Membership', amount: `$${MEMBERSHIP_TIERS.Community.price.toFixed(2)}` });
+  openPaymentModal({ kind: 'membership', tier: 'Community', name: 'Community Membership', amount: `$${currentPrice('Community').toFixed(2)}` });
 });
 
 document.getElementById('vipModalClose').addEventListener('click', () => { document.getElementById('vipModal').hidden = true; });
