@@ -27,6 +27,8 @@ model User {
   lastMembershipReminderAt DateTime? // throttles reminder emails to at most one every few days
   resetToken     String?      @unique // forgot-password flow; single-use, cleared on success
   resetTokenExpiresAt DateTime?
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique // the active Community Membership subscription, if any
   aiTradeConnected Boolean    @default(false)
   aiTradeUndertakingAcceptedAt DateTime?
   payments       Payment[]
