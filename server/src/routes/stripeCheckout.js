@@ -75,26 +75,41 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object;
-        if (session.mode === 'subscription' && session.subscription) {
+        // Newer Stripe API versions moved this off the top-level field for
+        // invoices (see invoice.paid below) — falling back defensively here
+        // too in case Checkout Session follows the same pattern.
+        const sessionSubscriptionId = session.subscription
+          || (session.parent && session.parent.subscription_details && session.parent.subscription_details.subscription);
+        if (session.mode === 'subscription' && sessionSubscriptionId) {
           const userId = Number(session.metadata && session.metadata.userId);
           if (userId) {
-            await prisma.user.update({ where: { id: userId }, data: { stripeSubscriptionId: session.subscription } });
+            await prisma.user.update({ where: { id: userId }, data: { stripeSubscriptionId: sessionSubscriptionId } });
           }
         }
         break;
       }
 
       // The canonical "payment actually succeeded" event for subscriptions —
-      // fires on the first invoice and every renewal. Extends membership by
-      // 30 days from the invoice's own period end (Stripe already tracks the
+      // fires on the first invoice and every renewal. Extends membership
+      // through the invoice's own period end (Stripe already tracks the
       // billing cycle, so we don't have to reconstruct/guess it here).
       case 'invoice.paid': {
         const invoice = event.data.object;
-        if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        // As of API version 2025-10-29 ("basil"), invoice.subscription was
+        // removed in favor of invoice.parent.subscription_details.subscription
+        // — confirmed directly against this account's actual event payload.
+        const subscriptionId = invoice.parent && invoice.parent.subscription_details && invoice.parent.subscription_details.subscription;
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const userId = Number(subscription.metadata && subscription.metadata.userId);
           if (userId) {
-            const periodEnd = new Date(subscription.current_period_end * 1000);
+            // Flexible billing mode (the new default) moved current_period_end
+            // from the subscription itself to its first item — also confirmed
+            // directly against this account. Fall back to the classic
+            // top-level field in case an existing subscription predates this.
+            const periodEndSeconds = subscription.current_period_end
+              || (subscription.items.data[0] && subscription.items.data[0].current_period_end);
+            const periodEnd = new Date(periodEndSeconds * 1000);
             const user = await prisma.user.update({
               where: { id: userId },
               data: {
@@ -124,8 +139,9 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object;
-        if (invoice.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+        const subscriptionId = invoice.parent && invoice.parent.subscription_details && invoice.parent.subscription_details.subscription;
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const userId = Number(subscription.metadata && subscription.metadata.userId);
           if (userId) {
             const user = await prisma.user.findUnique({ where: { id: userId } });
