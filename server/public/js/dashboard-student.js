@@ -32,6 +32,28 @@ document.querySelectorAll('[data-nav-to]').forEach((el) => {
   el.addEventListener('click', (e) => { e.preventDefault(); showPanel(el.dataset.navTo); });
 });
 
+// Land back on the right panel after a Stripe Checkout redirect, and let the
+// student know what happened — the actual membership grant/expiry update
+// comes from the webhook (async), so "success" here just means checkout
+// completed, not that the database update has necessarily landed yet.
+(function handleStripeRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const stripeResult = params.get('stripe');
+  const panel = params.get('panel');
+  if (panel) showPanel(panel);
+  if (stripeResult === 'success') {
+    alert('Payment received! Your membership will activate within a few seconds — refresh this page if it doesn\'t show as active yet.');
+  } else if (stripeResult === 'cancelled') {
+    alert('Checkout was cancelled — no payment was made.');
+  }
+  if (stripeResult) {
+    params.delete('stripe');
+    params.delete('panel');
+    const newUrl = window.location.pathname + (params.toString() ? `?${params}` : '');
+    window.history.replaceState({}, '', newUrl);
+  }
+})();
+
 document.getElementById('logoutBtn').addEventListener('click', (e) => {
   e.preventDefault();
   Auth.logout();
@@ -260,7 +282,7 @@ function renderMembership() {
     </div>`;
 }
 
-document.getElementById('membershipPlans').addEventListener('click', (e) => {
+document.getElementById('membershipPlans').addEventListener('click', async (e) => {
   const gotoCourses = e.target.closest('button[data-goto-courses]');
   if (gotoCourses) { showPanel('courses'); return; }
   if (e.target.closest('#vipBookBtn')) {
@@ -271,7 +293,14 @@ document.getElementById('membershipPlans').addEventListener('click', (e) => {
   }
   const btn = e.target.closest('button[data-request-tier]');
   if (!btn) return;
-  openPaymentModal({ kind: 'membership', tier: 'Community', name: 'Community Membership', amount: `$${currentPrice('Community').toFixed(2)}` });
+  btn.disabled = true;
+  try {
+    const { url } = await apiFetch('/stripe/create-checkout-session', { method: 'POST', body: JSON.stringify({ kind: 'membership' }) });
+    window.location.href = url;
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+  }
 });
 
 document.getElementById('vipModalClose').addEventListener('click', () => { document.getElementById('vipModal').hidden = true; });

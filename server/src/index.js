@@ -18,6 +18,12 @@ process.on('unhandledRejection', (err) => {
 const app = express();
 
 app.use(cors());
+
+// Mounted before the global express.json() below: the webhook route inside
+// needs the raw request body to verify Stripe's signature, and once
+// express.json() parses a body there's no getting the raw bytes back.
+app.use('/api/stripe', require('./routes/stripeCheckout'));
+
 app.use(express.json());
 const uploadsRoot = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'uploads');
 app.use('/uploads', express.static(uploadsRoot));
