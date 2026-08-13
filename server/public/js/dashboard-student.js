@@ -512,22 +512,24 @@ async function loadAiTrade() {
     return;
   }
 
+  const undertakingLinkHtml = `<p class="mini-note" style="margin-bottom:16px;">📄 <a href="${API_BASE}/ai-trade/undertaking/${session.id}/download?token=${session.token}" target="_blank">Download your signed undertaking (PDF)</a></p>`;
+
   if (data.aiTradeConnected) {
-    el.innerHTML = `<p class="mini-note">✅ You're connected! Your account is live in our AI Trade system.</p>`;
+    el.innerHTML = `${undertakingLinkHtml}<p class="mini-note">✅ You're connected! Your account is live in our AI Trade system.</p>`;
     return;
   }
 
   if (data.latest && data.latest.status === 'Pending') {
-    el.innerHTML = `<p class="mini-note">⏳ Your AI Trade request (${data.latest.broker}, ${data.latest.amount}) is pending review. Make sure you've messaged us on <a href="${data.verifyUrl}" target="_blank" rel="noopener">Telegram</a> with your proof.</p>`;
+    el.innerHTML = `${undertakingLinkHtml}<p class="mini-note">⏳ Your AI Trade request (${data.latest.broker}, ${data.latest.amount}) is pending review. Make sure you've messaged us on <a href="${data.verifyUrl}" target="_blank" rel="noopener">Telegram</a> with your proof.</p>`;
     return;
   }
 
   if (data.latest && data.latest.status === 'Approved') {
-    el.innerHTML = `<p class="mini-note">✅ Your submission has been verified — we're now connecting your account to AI Trade. This can take a little time.</p>`;
+    el.innerHTML = `${undertakingLinkHtml}<p class="mini-note">✅ Your submission has been verified — we're now connecting your account to AI Trade. This can take a little time.</p>`;
     return;
   }
 
-  el.innerHTML = renderAiTradeForm();
+  el.innerHTML = undertakingLinkHtml + renderAiTradeForm();
   if (data.latest && data.latest.status === 'Rejected') {
     document.getElementById('aiTradeContent').insertAdjacentHTML('afterbegin', '<p class="modal-error" style="margin-bottom:16px;">Your last submission couldn\'t be verified. Please double-check your account and try again.</p>');
   }

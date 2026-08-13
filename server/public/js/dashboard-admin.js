@@ -569,8 +569,9 @@ async function loadUndertakings() {
       <td>${u.email}</td>
       <td>${new Date(u.aiTradeUndertakingAcceptedAt).toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
       <td><span class="badge-pill ${u.aiTradeConnected ? 'pill-success' : 'pill-muted'}">${u.aiTradeConnected ? 'Connected' : 'Not yet'}</span></td>
+      <td><a class="btn btn-outline btn-sm" href="${API_BASE}/ai-trade/undertaking/${u.id}/download?token=${session.token}" target="_blank">PDF</a></td>
     </tr>`).join('')
-    : '<tr><td colspan="4"><p class="empty-note">No students have signed the undertaking yet.</p></td></tr>';
+    : '<tr><td colspan="5"><p class="empty-note">No students have signed the undertaking yet.</p></td></tr>';
 }
 
 // ================= VIP BOOKINGS =================

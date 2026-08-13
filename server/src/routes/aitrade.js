@@ -3,6 +3,7 @@ const prisma = require('../prisma');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { logActivity } = require('../activity');
 const { notifyAdmin } = require('../email');
+const { renderUndertakingPdf } = require('../undertakingPdf');
 
 const router = express.Router();
 
@@ -84,6 +85,25 @@ router.get('/undertakings', requireAuth, requireAdmin, async (req, res) => {
     orderBy: { aiTradeUndertakingAcceptedAt: 'desc' },
   });
   res.json(users);
+});
+
+// A student can download their own signed undertaking; an admin can download
+// any student's — matches the same ownership pattern as certificate downloads.
+router.get('/undertaking/:userId/download', requireAuth, async (req, res) => {
+  const userId = Number(req.params.userId);
+  if (userId !== req.user.id && req.user.role !== 'admin') return res.status(403).json({ error: 'Not your undertaking' });
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return res.status(404).json({ error: 'Student not found' });
+  if (!user.aiTradeUndertakingAcceptedAt) return res.status(404).json({ error: 'This student has not signed the undertaking yet' });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="AI-Trade-Undertaking-${user.name.replace(/\s+/g, '-')}.pdf"`);
+  renderUndertakingPdf(res, {
+    studentName: user.name,
+    studentEmail: user.email,
+    acceptedAt: user.aiTradeUndertakingAcceptedAt,
+  });
 });
 
 router.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
