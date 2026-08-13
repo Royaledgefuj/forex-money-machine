@@ -23,7 +23,11 @@ async function send(to, subject, html) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM || 'Forex Money Machine Academy <onboarding@resend.dev>',
+        // vrcommercesolutions.com is verified in Resend, so this is a safe
+        // default — onboarding@resend.dev (Resend's sandbox address) can only
+        // send to the Resend account owner's own email, which silently broke
+        // admin notifications going to a different address.
+        from: process.env.RESEND_FROM || 'Forex Money Machine Academy <noreply@vrcommercesolutions.com>',
         to,
         subject,
         html,
