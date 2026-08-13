@@ -6,13 +6,14 @@ let transporter = null;
 if (process.env.SMTP_USER && process.env.SMTP_PASS) {
   transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    // Railway's container network is dual-stack, and Node's default DNS
-    // resolution can hand back an IPv6 address for smtp.gmail.com that
-    // Railway's egress can't route — the connection then just hangs until
-    // it times out (observed directly: "Connection timeout" on every send).
-    // Forcing IPv4 here fixes it.
+    // Port 465 (implicit TLS) was timing out/ENETUNREACH from Railway even
+    // after forcing IPv4 DNS resolution — looks like Railway's egress blocks
+    // or badly routes that port specifically. 587 with STARTTLS is Gmail's
+    // other supported SMTP port; trying it since raw-SMTP-port blocking on
+    // PaaS hosts is common and port-specific.
+    port: 587,
+    secure: false,
+    requireTLS: true,
     family: 4,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
