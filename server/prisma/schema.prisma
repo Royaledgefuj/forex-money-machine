@@ -27,8 +27,7 @@ model User {
   lastMembershipReminderAt DateTime? // throttles reminder emails to at most one every few days
   resetToken     String?      @unique // forgot-password flow; single-use, cleared on success
   resetTokenExpiresAt DateTime?
-  stripeCustomerId     String? @unique
-  stripeSubscriptionId String? @unique // the active Community Membership subscription, if any
+  paypalSubscriptionId String? @unique // the active Community Membership subscription, if any
   aiTradeConnected Boolean    @default(false)
   aiTradeUndertakingAcceptedAt DateTime?
   payments       Payment[]
@@ -237,6 +236,20 @@ model AnalyticsSettings {
   monthlySales          Json     @default("[]")
   trafficSources        Json     @default("[]")
   updatedAt             DateTime @updatedAt
+}
+
+// Holds checkout details (VIP notes, course choice) across the PayPal
+// redirect for one-time Orders — PayPal's custom_id field caps at 127 chars,
+// too small for free-text notes, so we stash the row id there instead and
+// look the rest up on capture. Consumed (deleted) once captured.
+model PendingCheckout {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  kind        String   // "course" | "vip"
+  courseId    Int?
+  requestedAt DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
 }
 
 model ActivityLog {
