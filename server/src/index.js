@@ -1,3 +1,10 @@
+// Railway's container network is dual-stack, but its egress can't actually
+// route the IPv6 addresses Node's default DNS order hands back for hosts
+// like smtp.gmail.com — confirmed directly via production logs (ENETUNREACH
+// on a 2607:f8b0:... address on every outbound SMTP attempt). This must run
+// before anything else does DNS resolution (SMTP, outbound API calls, etc).
+require('dns').setDefaultResultOrder('ipv4first');
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
