@@ -250,43 +250,27 @@
   </div>
 </div>
 
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="payModal" hidden>
+<!-- COURSE PLAN MODAL (Stripe checkout — no card data collected here) -->
+<div class="modal-overlay" id="coursePlanModal" hidden>
   <div class="modal-box">
     <div class="card-head">
-      <h3 id="payModalTitle">Complete Payment</h3>
-      <button type="button" class="modal-close" id="payModalClose">&times;</button>
+      <h3 id="coursePlanModalTitle">Enroll</h3>
+      <button type="button" class="modal-close" id="coursePlanModalClose">&times;</button>
     </div>
-    <p class="mini-note" id="payModalAmount" style="margin-bottom:16px;"></p>
-    <div class="form-field full" id="payPlanField" hidden style="margin-bottom:16px;">
-      <label>Choose Your Plan</label>
-      <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
-        <input type="radio" name="payPlan" id="payPlanFull" value="full" checked style="width:auto;margin-top:4px;">
-        <span class="mini-note"><strong id="payPlanFullLabel">Pay in full</strong> — one-time, learning access + certificate only (no ongoing support)</span>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:8px;">
-        <input type="radio" name="payPlan" id="payPlanInstallment" value="installment" style="width:auto;margin-top:4px;">
-        <span class="mini-note"><strong>$75 to start + $10 / month</strong> — ongoing course access &amp; support; $10 due on the 1st of each month from your second month, verified by Telegram proof</span>
-      </label>
-    </div>
-    <form id="payForm" class="form-grid">
-      <div class="form-field full">
-        <label>Payment Method</label>
-        <select id="payMethod" required></select>
+    <form id="coursePlanForm" class="form-grid">
+      <div class="form-field full" style="margin-bottom:8px;">
+        <label>Choose Your Plan</label>
+        <label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <input type="radio" name="coursePlan" id="coursePlanFull" value="full" checked style="width:auto;margin-top:4px;">
+          <span class="mini-note"><strong id="coursePlanFullLabel">Pay in full</strong> — one-time, learning access + certificate only (no ongoing support)</span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;">
+          <input type="radio" name="coursePlan" id="coursePlanInstallment" value="installment" style="width:auto;margin-top:4px;">
+          <span class="mini-note"><strong>$75 to start + $10 / month</strong> — ongoing course access &amp; support, billed automatically each month</span>
+        </label>
       </div>
-      <div class="form-field full">
-        <label>How to Pay</label>
-        <div class="pay-instructions" id="payInstructions">Select a payment method above.</div>
-      </div>
-      <div class="form-field full">
-        <label>Reference / Note (optional)</label>
-        <input type="text" id="payReference" placeholder="e.g. transaction ID">
-      </div>
-      <div class="form-field full">
-        <p class="mini-note">After paying, send your payment screenshot directly to us on Telegram so we can verify and activate your access: <a href="https://t.me/Moneymagnet2026" target="_blank" rel="noopener">@Moneymagnet2026</a></p>
-      </div>
-      <p class="modal-error" id="payError" hidden></p>
-      <div class="form-field full"><button type="submit" class="btn btn-gold" id="paySubmitBtn">Submit Request</button></div>
+      <p class="modal-error" id="coursePlanError" hidden></p>
+      <div class="form-field full"><button type="submit" class="btn btn-gold" id="coursePlanSubmitBtn">Continue to Payment</button></div>
     </form>
   </div>
 </div>

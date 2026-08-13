@@ -96,7 +96,7 @@ loadEnrollments();
 document.getElementById('courseRecommended').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-buy-course]');
   if (!btn) return;
-  openPaymentModal({ kind: 'course', courseId: btn.dataset.buyCourse, name: btn.dataset.buyName, amount: btn.dataset.buyAmount });
+  openCoursePlanModal({ courseId: btn.dataset.buyCourse, name: btn.dataset.buyName, amount: btn.dataset.buyAmount });
 });
 
 // The Community membership unlocks all live classes; Free members see them locked.
@@ -317,15 +317,16 @@ document.getElementById('vipForm').addEventListener('submit', async (e) => {
   errorEl.hidden = true;
   try {
     const requestedAt = new Date(`${date}T${time}`).toISOString();
-    await apiFetch('/vip-bookings', { method: 'POST', body: JSON.stringify({ requestedAt, notes }) });
-    await loadVipBookings();
-    renderMembership();
-    document.getElementById('vipModal').hidden = true;
-    alert('Booking requested! We\'ll confirm your session shortly by email.');
+    // The booking itself is created by the webhook once payment succeeds —
+    // no unpaid "Pending" booking is ever created client-side.
+    const { url } = await apiFetch('/stripe/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'vip', requestedAt, notes }),
+    });
+    window.location.href = url;
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.hidden = false;
-  } finally {
     submitBtn.disabled = false;
   }
 });
@@ -346,95 +347,42 @@ async function refreshMembershipTier() {
 }
 refreshMembershipTier();
 
-// ================= PAYMENT MODAL (shared: membership + course purchases) =================
-let PAYMENT_METHODS = [];
-let currentPaymentRequest = null;
+// ================= COURSE PLAN MODAL (Stripe checkout — full or installment) =================
+let currentCourseRequest = null;
 
-const payModal = document.getElementById('payModal');
-const payForm = document.getElementById('payForm');
-const payMethodSelect = document.getElementById('payMethod');
-const payInstructions = document.getElementById('payInstructions');
-const payError = document.getElementById('payError');
+const coursePlanModal = document.getElementById('coursePlanModal');
+const coursePlanForm = document.getElementById('coursePlanForm');
+const coursePlanError = document.getElementById('coursePlanError');
 
-const COURSE_INSTALLMENT_AMOUNT = '$75.00';
-const payPlanField = document.getElementById('payPlanField');
-
-function updatePayAmountForPlan() {
-  if (currentPaymentRequest.kind !== 'course') return;
-  const plan = document.querySelector('input[name="payPlan"]:checked').value;
-  const amount = plan === 'installment' ? COURSE_INSTALLMENT_AMOUNT : currentPaymentRequest.amount;
-  document.getElementById('payModalAmount').textContent = `Amount due now: ${amount}`;
+function openCoursePlanModal(request) {
+  currentCourseRequest = request;
+  coursePlanError.hidden = true;
+  coursePlanForm.reset();
+  document.getElementById('coursePlanModalTitle').textContent = `Enroll — ${request.name}`;
+  document.getElementById('coursePlanFullLabel').textContent = `Pay in full — ${request.amount}`;
+  coursePlanModal.hidden = false;
 }
 
-async function openPaymentModal(request) {
-  currentPaymentRequest = request;
-  payError.hidden = true;
-  payForm.reset();
-  document.getElementById('payModalTitle').textContent = `Pay for ${request.name}`;
+function closeCoursePlanModal() { coursePlanModal.hidden = true; currentCourseRequest = null; }
+document.getElementById('coursePlanModalClose').addEventListener('click', closeCoursePlanModal);
+coursePlanModal.addEventListener('click', (e) => { if (e.target === coursePlanModal) closeCoursePlanModal(); });
 
-  if (request.kind === 'course') {
-    document.getElementById('payPlanFullLabel').textContent = `Pay in full — ${request.amount}`;
-    document.getElementById('payPlanFull').checked = true;
-    payPlanField.hidden = false;
-    updatePayAmountForPlan();
-  } else {
-    payPlanField.hidden = true;
-    document.getElementById('payModalAmount').textContent = `Amount due: ${request.amount}`;
-  }
-
-  if (!PAYMENT_METHODS.length) PAYMENT_METHODS = await apiFetch('/payment-methods');
-  payMethodSelect.innerHTML = PAYMENT_METHODS.map((m) => `<option value="${m.name}">${m.name}</option>`).join('');
-  updatePayInstructions();
-
-  payModal.hidden = false;
-}
-document.querySelectorAll('input[name="payPlan"]').forEach((r) => r.addEventListener('change', updatePayAmountForPlan));
-
-function updatePayInstructions() {
-  const method = PAYMENT_METHODS.find((m) => m.name === payMethodSelect.value);
-  payInstructions.textContent = method ? method.instructions : 'Select a payment method above.';
-}
-payMethodSelect.addEventListener('change', updatePayInstructions);
-
-function closePaymentModal() { payModal.hidden = true; currentPaymentRequest = null; }
-document.getElementById('payModalClose').addEventListener('click', closePaymentModal);
-payModal.addEventListener('click', (e) => { if (e.target === payModal) closePaymentModal(); });
-
-payForm.addEventListener('submit', async (e) => {
+coursePlanForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!currentPaymentRequest) return;
-
-  const submitBtn = document.getElementById('paySubmitBtn');
+  if (!currentCourseRequest) return;
+  const submitBtn = document.getElementById('coursePlanSubmitBtn');
   submitBtn.disabled = true;
-  payError.hidden = true;
-
+  coursePlanError.hidden = true;
   try {
-    const body = {
-      method: payMethodSelect.value,
-      reference: document.getElementById('payReference').value || undefined,
-    };
-
-    if (currentPaymentRequest.kind === 'course') {
-      body.plan = document.querySelector('input[name="payPlan"]:checked').value;
-    }
-
-    if (currentPaymentRequest.kind === 'membership') {
-      body.tier = currentPaymentRequest.tier;
-      await apiFetch('/membership/request', { method: 'POST', body: JSON.stringify(body) });
-      await loadPendingMembershipRequests();
-      renderMembership();
-    } else {
-      await apiFetch(`/courses/${currentPaymentRequest.courseId}/purchase-request`, { method: 'POST', body: JSON.stringify(body) });
-      await loadEnrollments();
-    }
-
-    await loadPayments();
-    closePaymentModal();
-    alert('Request submitted! Message us on Telegram (@Moneymagnet2026) with your payment proof and we\'ll verify and activate your access shortly.');
+    const plan = document.querySelector('input[name="coursePlan"]:checked').value;
+    const { url } = await apiFetch('/stripe/create-checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ kind: 'course', courseId: currentCourseRequest.courseId, plan }),
+    });
+    window.location.href = url;
   } catch (err) {
-    payError.textContent = err.message;
-    payError.hidden = false;
-  } finally {
+    coursePlanError.textContent = err.message;
+    coursePlanError.hidden = false;
     submitBtn.disabled = false;
   }
 });
