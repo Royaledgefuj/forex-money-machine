@@ -32,22 +32,24 @@ document.querySelectorAll('[data-nav-to]').forEach((el) => {
   el.addEventListener('click', (e) => { e.preventDefault(); showPanel(el.dataset.navTo); });
 });
 
-// Land back on the right panel after a Stripe Checkout redirect, and let the
-// student know what happened — the actual membership grant/expiry update
-// comes from the webhook (async), so "success" here just means checkout
-// completed, not that the database update has necessarily landed yet.
-(function handleStripeRedirect() {
+// Land back on the right panel after a PayPal Checkout redirect, and let the
+// student know what happened — the actual membership/enrollment grant comes
+// from the webhook (async), so "success" here just means checkout completed,
+// not that the database update has necessarily landed yet.
+(function handlePaypalRedirect() {
   const params = new URLSearchParams(window.location.search);
-  const stripeResult = params.get('stripe');
+  const paypalResult = params.get('paypal');
   const panel = params.get('panel');
   if (panel) showPanel(panel);
-  if (stripeResult === 'success') {
-    alert('Payment received! Your membership will activate within a few seconds — refresh this page if it doesn\'t show as active yet.');
-  } else if (stripeResult === 'cancelled') {
+  if (paypalResult === 'success') {
+    alert('Payment received! Your access will activate within a few seconds — refresh this page if it doesn\'t show as active yet.');
+  } else if (paypalResult === 'cancelled') {
     alert('Checkout was cancelled — no payment was made.');
+  } else if (paypalResult === 'failed') {
+    alert('Payment could not be completed — no charge was made. Please try again.');
   }
-  if (stripeResult) {
-    params.delete('stripe');
+  if (paypalResult) {
+    params.delete('paypal');
     params.delete('panel');
     const newUrl = window.location.pathname + (params.toString() ? `?${params}` : '');
     window.history.replaceState({}, '', newUrl);
@@ -295,7 +297,7 @@ document.getElementById('membershipPlans').addEventListener('click', async (e) =
   if (!btn) return;
   btn.disabled = true;
   try {
-    const { url } = await apiFetch('/stripe/create-checkout-session', { method: 'POST', body: JSON.stringify({ kind: 'membership' }) });
+    const { url } = await apiFetch('/paypal/create-checkout', { method: 'POST', body: JSON.stringify({ kind: 'membership' }) });
     window.location.href = url;
   } catch (err) {
     alert(err.message);
@@ -319,7 +321,7 @@ document.getElementById('vipForm').addEventListener('submit', async (e) => {
     const requestedAt = new Date(`${date}T${time}`).toISOString();
     // The booking itself is created by the webhook once payment succeeds —
     // no unpaid "Pending" booking is ever created client-side.
-    const { url } = await apiFetch('/stripe/create-checkout-session', {
+    const { url } = await apiFetch('/paypal/create-checkout', {
       method: 'POST',
       body: JSON.stringify({ kind: 'vip', requestedAt, notes }),
     });
@@ -347,7 +349,7 @@ async function refreshMembershipTier() {
 }
 refreshMembershipTier();
 
-// ================= COURSE PLAN MODAL (Stripe checkout — full or installment) =================
+// ================= COURSE PLAN MODAL (PayPal checkout — full or installment) =================
 let currentCourseRequest = null;
 
 const coursePlanModal = document.getElementById('coursePlanModal');
@@ -375,7 +377,7 @@ coursePlanForm.addEventListener('submit', async (e) => {
   coursePlanError.hidden = true;
   try {
     const plan = document.querySelector('input[name="coursePlan"]:checked').value;
-    const { url } = await apiFetch('/stripe/create-checkout-session', {
+    const { url } = await apiFetch('/paypal/create-checkout', {
       method: 'POST',
       body: JSON.stringify({ kind: 'course', courseId: currentCourseRequest.courseId, plan }),
     });

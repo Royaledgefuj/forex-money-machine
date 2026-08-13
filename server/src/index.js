@@ -18,12 +18,6 @@ process.on('unhandledRejection', (err) => {
 const app = express();
 
 app.use(cors());
-
-// Mounted before the global express.json() below: the webhook route inside
-// needs the raw request body to verify Stripe's signature, and once
-// express.json() parses a body there's no getting the raw bytes back.
-app.use('/api/stripe', require('./routes/stripeCheckout'));
-
 app.use(express.json());
 const uploadsRoot = process.env.UPLOADS_DIR || path.join(__dirname, '..', 'uploads');
 app.use('/uploads', express.static(uploadsRoot));
@@ -50,6 +44,7 @@ app.use('/api/market-quotes', require('./routes/marketQuotes'));
 app.use('/api/signals', require('./routes/xauSignal'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/paypal', require('./routes/paypalCheckout'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 // Reports only a boolean — never the actual SMTP credentials — so this is
