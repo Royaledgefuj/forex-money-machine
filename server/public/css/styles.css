@@ -135,18 +135,6 @@ p{ margin:0 0 1em; color: var(--muted); }
 .stat-num{ font-family: var(--font-serif); font-size:2.2rem; font-weight:800; color: var(--gold-light); }
 .stat-label{ font-size:.82rem; color: var(--muted-dim); margin-top:4px; letter-spacing:.02em; }
 
-/* Ticker */
-.ticker{
-  position:relative; z-index:2; border-top:1px solid var(--border); background: rgba(10,14,23,0.65);
-  overflow:hidden; padding: 14px 0; backdrop-filter: blur(8px);
-}
-.ticker-track{ display:flex; gap:48px; width:max-content; animation: ticker 32s linear infinite; }
-.ticker span{ display:flex; gap:8px; font-size:.85rem; font-weight:600; color: var(--muted); white-space:nowrap; }
-.ticker em{ font-style:normal; }
-.ticker .up, .ticker em.up{ color: var(--up); }
-.ticker .down, .ticker em.down{ color: var(--down); }
-@keyframes ticker{ from{ transform: translateX(0); } to{ transform: translateX(-50%); } }
-
 /* ===== Sections ===== */
 .section{ padding: 110px 0; position:relative; z-index:1; }
 .section-head{ max-width: 680px; margin: 0 auto 56px; text-align:center; }

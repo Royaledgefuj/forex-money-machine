@@ -47,7 +47,6 @@ app.use('/api/vip-bookings', require('./routes/vipBookings'));
 app.use('/api/testimonials', require('./routes/testimonials'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/certificates', require('./routes/certificates'));
-app.use('/api/market-quotes', require('./routes/marketQuotes'));
 app.use('/api/signals', require('./routes/xauSignal'));
 app.use('/api/blog', require('./routes/blog'));
 app.use('/api/analytics', require('./routes/analytics'));
@@ -78,5 +77,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Forex Money Machine API listening on http://localhost:${PORT}`));
 
-require('./marketData').startPolling();
 require('./membershipReminders').startMembershipReminderPolling();
